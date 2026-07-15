@@ -1,8 +1,11 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display+SC:wght@400;700;900&display=swap");
+@import "tailwindcss";
+
 :root {
   color: #1f2933;
   background: #f7f8fa;
   font-family:
-    Inter,
+    Manrope,
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -97,6 +100,10 @@ h1,
 h2 {
   margin-bottom: 0;
   color: #111827;
+  font-family:
+    "Playfair Display SC",
+    Georgia,
+    serif;
   line-height: 1.15;
 }
 
