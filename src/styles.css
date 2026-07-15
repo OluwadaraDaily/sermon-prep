@@ -165,6 +165,17 @@ select {
   min-height: 0;
 }
 
+.export-controls .file-name-field {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.export-controls .file-name-field input {
+  width: 180px;
+  min-height: 34px;
+}
+
 .reference-list {
   display: grid;
   gap: 12px;
@@ -273,6 +284,10 @@ sup {
   }
 
   button {
+    width: 100%;
+  }
+
+  .export-controls .file-name-field input {
     width: 100%;
   }
 }

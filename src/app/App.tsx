@@ -11,6 +11,7 @@ export function App() {
   const [references, setReferences] = useState<BibleReference[]>([]);
   const [passages, setPassages] = useState<Record<string, Passage>>({});
   const [mode, setMode] = useState<PdfExportMode>("references-and-text");
+  const [fileName, setFileName] = useState("sermon-passages");
   const [statusMessage, setStatusMessage] = useState("Paste notes to find Bible references.");
 
   const approvedPassages = useMemo(
@@ -98,7 +99,7 @@ export function App() {
       mode,
       passages: validPassages.length > 0 ? validPassages : approvedPassages,
     });
-    downloadPdf(bytes);
+    downloadPdf(bytes, toPdfFileName(fileName));
   }
 
   return (
@@ -130,6 +131,15 @@ export function App() {
             <h2 id="review-heading">Detected references</h2>
           </div>
           <div className="export-controls" role="group" aria-label="PDF export mode">
+            <label className="file-name-field">
+              File name
+              <input
+                aria-label="PDF file name"
+                onChange={(event) => setFileName(event.target.value)}
+                placeholder="sermon-passages"
+                value={fileName}
+              />
+            </label>
             <label>
               <input checked={mode === "references"} name="mode" onChange={() => setMode("references")} type="radio" />
               References
@@ -199,4 +209,15 @@ export function App() {
 
 function referenceKey(reference: BibleReference): string {
   return [reference.bookId, reference.chapterStart, reference.verseStart ?? "", reference.chapterEnd, reference.verseEnd ?? ""].join("|");
+}
+
+function toPdfFileName(value: string): string {
+  const cleaned = value
+    .trim()
+    .replace(/\.pdf$/i, "")
+    .replace(/[^A-Za-z0-9._ -]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
+  return `${cleaned || "sermon-passages"}.pdf`;
 }

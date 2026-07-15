@@ -31,6 +31,8 @@ describe("buildPassagePdf", () => {
     const text = new TextDecoder().decode(bytes);
 
     expect(text.startsWith("%PDF-1.4")).toBe(true);
+    expect(text).toContain("/BaseFont /Helvetica-Bold");
+    expect(text).toContain("/F2 10 Tf");
     expect(text).toContain("John 3:16");
     expect(text).toContain("For God so loved the world.");
   });

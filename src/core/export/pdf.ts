@@ -15,22 +15,28 @@ const margin = 54;
 const lineHeight = 14;
 const bodySize = 10;
 
+type PdfLine = {
+  text: string;
+  bold?: boolean;
+};
+
 export function buildPassagePdf(input: PdfExportInput): Uint8Array {
   const lines = buildLines(input);
   const pages = paginate(lines, 48);
   const pageCount = Math.max(1, pages.length);
   const objects: string[] = [];
-  const pageIds = Array.from({ length: pageCount }, (_, index) => 4 + index);
-  const contentIds = Array.from({ length: pageCount }, (_, index) => 4 + pageCount + index);
+  const pageIds = Array.from({ length: pageCount }, (_, index) => 5 + index);
+  const contentIds = Array.from({ length: pageCount }, (_, index) => 5 + pageCount + index);
 
   objects[0] = "<< /Type /Catalog /Pages 2 0 R >>";
   objects[1] = `<< /Type /Pages /Count ${pageCount} /Kids [${pageIds.map((id) => `${id} 0 R`).join(" ")}] >>`;
   objects[2] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+  objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
 
   for (let index = 0; index < pageCount; index += 1) {
     const pageId = pageIds[index];
     const contentId = contentIds[index];
-    objects[pageId - 1] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`;
+    objects[pageId - 1] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentId} 0 R >>`;
     const stream = renderPage(pages[index] ?? []);
     objects[contentId - 1] = `<< /Length ${byteLength(stream)} >>\nstream\n${stream}\nendstream`;
   }
@@ -50,37 +56,37 @@ export function downloadPdf(bytes: Uint8Array, fileName = "sermon-passages.pdf")
   URL.revokeObjectURL(url);
 }
 
-function buildLines(input: PdfExportInput): string[] {
+function buildLines(input: PdfExportInput): PdfLine[] {
   const generatedAt = input.generatedAt ?? new Date();
   const lines = [
-    input.title || "Sermon Passages",
-    `World English Bible passages prepared ${generatedAt.toLocaleDateString()}`,
-    "World English Bible, public domain. Source: https://ebible.org/engwebp/",
-    "",
+    { text: input.title || "Sermon Passages", bold: true },
+    { text: `World English Bible passages prepared ${generatedAt.toLocaleDateString()}`, bold: true },
+    { text: "World English Bible, public domain. Source: https://ebible.org/engwebp/", bold: true },
+    { text: "" },
   ];
 
   if (input.passages.length === 0) {
-    lines.push("No approved passages selected.");
+    lines.push({ text: "No approved passages selected." });
     return lines;
   }
 
   for (const passage of input.passages) {
-    lines.push(passage.normalized);
+    lines.push({ text: passage.normalized, bold: true });
 
     if (input.mode === "references-and-text") {
       for (const verse of passage.verses) {
-        lines.push(...wrapLine(`${verse.chapter}:${verse.verse} ${verse.text}`, 92));
+        lines.push(...wrapLine(`${verse.chapter}:${verse.verse} ${verse.text}`, 92).map((text) => ({ text })));
       }
     }
 
-    lines.push("");
+    lines.push({ text: "" });
   }
 
   return lines;
 }
 
-function paginate(lines: string[], maxLinesPerPage: number): string[][] {
-  const pages: string[][] = [];
+function paginate(lines: PdfLine[], maxLinesPerPage: number): PdfLine[][] {
+  const pages: PdfLine[][] = [];
   for (let index = 0; index < lines.length; index += maxLinesPerPage) {
     pages.push(lines.slice(index, index + maxLinesPerPage));
   }
@@ -88,14 +94,20 @@ function paginate(lines: string[], maxLinesPerPage: number): string[][] {
   return pages;
 }
 
-function renderPage(lines: string[]): string {
+function renderPage(lines: PdfLine[]): string {
   const commands = ["BT", `/F1 ${bodySize} Tf`, `${margin} ${pageHeight - margin} Td`];
+  let currentFont = "F1";
 
   lines.forEach((line, index) => {
     if (index > 0) {
       commands.push(`0 -${lineHeight} Td`);
     }
-    commands.push(`(${escapePdfText(line)}) Tj`);
+    const nextFont = line.bold ? "F2" : "F1";
+    if (nextFont !== currentFont) {
+      commands.push(`/${nextFont} ${bodySize} Tf`);
+      currentFont = nextFont;
+    }
+    commands.push(`(${escapePdfText(line.text)}) Tj`);
   });
 
   commands.push("ET");
