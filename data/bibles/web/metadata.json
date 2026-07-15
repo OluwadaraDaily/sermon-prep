@@ -1,0 +1,14 @@
+{
+  "id": "web",
+  "name": "World English Bible",
+  "language": "en",
+  "canon": "protestant-66",
+  "bookCount": 66,
+  "sourceEditionId": "engwebp",
+  "sourceUrl": "https://ebible.org/engwebp/",
+  "copyrightUrl": "https://ebible.org/engwebp/copyright.htm",
+  "selectedAt": "2026-07-15",
+  "importedAt": null,
+  "checksum": null,
+  "notes": "Selected as the initial free-to-use English Bible source. Verse text import is deferred until Phase 1."
+}

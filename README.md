@@ -9,3 +9,11 @@ The app will:
 - fetch passage text from free-to-use Bible sources;
 - export the resulting passage list as a PDF;
 - use AI only where it adds value, with cost kept low by defaulting to deterministic parsing.
+
+See [docs/plans/WORKING_PLAN.md](docs/plans/WORKING_PLAN.md) for the working plan.
+
+## Local commands
+
+- `npm run dev`
+- `npm run test`
+- `npm run build`
