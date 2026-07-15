@@ -81,6 +81,10 @@ button:hover:not(:disabled) {
   margin-bottom: 16px;
 }
 
+.review-heading {
+  flex-direction: column;
+}
+
 .eyebrow {
   margin: 0 0 5px;
   color: #6b7280;
@@ -153,9 +157,9 @@ select {
 .export-controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  align-items: flex-end;
+  gap: 12px;
+  width: 100%;
 }
 
 .export-controls label {
@@ -179,7 +183,20 @@ select {
 }
 
 .export-controls .file-name-field input {
-  width: 180px;
+  width: min(260px, 100%);
+  min-height: 34px;
+}
+
+.mode-fields {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 34px;
+}
+
+.export-controls button {
+  margin-left: auto;
+  width: auto;
   min-height: 34px;
 }
 
@@ -292,6 +309,10 @@ sup {
 
   button {
     width: 100%;
+  }
+
+  .export-controls button {
+    margin-left: 0;
   }
 
   .export-controls .file-name-field input {

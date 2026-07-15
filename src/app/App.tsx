@@ -125,7 +125,7 @@ export function App() {
       </section>
 
       <section className="review-pane" aria-labelledby="review-heading">
-        <div className="pane-heading">
+        <div className="pane-heading review-heading">
           <div>
             <p className="eyebrow">WEB local lookup</p>
             <h2 id="review-heading">Detected references</h2>
@@ -140,14 +140,16 @@ export function App() {
                 value={fileName}
               />
             </label>
-            <label>
-              <input checked={mode === "references"} name="mode" onChange={() => setMode("references")} type="radio" />
-              References
-            </label>
-            <label>
-              <input checked={mode === "references-and-text"} name="mode" onChange={() => setMode("references-and-text")} type="radio" />
-              Text
-            </label>
+            <div className="mode-fields">
+              <label>
+                <input checked={mode === "references"} name="mode" onChange={() => setMode("references")} type="radio" />
+                References
+              </label>
+              <label>
+                <input checked={mode === "references-and-text"} name="mode" onChange={() => setMode("references-and-text")} type="radio" />
+                Text
+              </label>
+            </div>
             <button disabled={references.length === 0} type="button" onClick={handleDownloadPdf}>
               Download PDF
             </button>
