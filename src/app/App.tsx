@@ -12,6 +12,7 @@ export function App() {
   const [passages, setPassages] = useState<Record<string, Passage>>({});
   const [mode, setMode] = useState<PdfExportMode>("references-and-text");
   const [fileName, setFileName] = useState("sermon-passages");
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Paste notes to find Bible references.");
 
   const approvedPassages = useMemo(
@@ -89,17 +90,23 @@ export function App() {
   }
 
   async function handleDownloadPdf() {
-    const currentPassages = await refreshPassages(references);
-    const validPassages = references
-      .filter((reference) => reference.status === "valid")
-      .map((reference) => currentPassages[referenceKey(reference)] ?? passages[referenceKey(reference)])
-      .filter(Boolean);
-    const bytes = buildPassagePdf({
-      title: "Sermon Passages",
-      mode,
-      passages: validPassages.length > 0 ? validPassages : approvedPassages,
-    });
-    downloadPdf(bytes, toPdfFileName(fileName));
+    setIsDownloadingPdf(true);
+
+    try {
+      const currentPassages = await refreshPassages(references);
+      const validPassages = references
+        .filter((reference) => reference.status === "valid")
+        .map((reference) => currentPassages[referenceKey(reference)] ?? passages[referenceKey(reference)])
+        .filter(Boolean);
+      const bytes = await buildPassagePdf({
+        title: "Sermon Passages",
+        mode,
+        passages: validPassages.length > 0 ? validPassages : approvedPassages,
+      });
+      downloadPdf(bytes, toPdfFileName(fileName));
+    } finally {
+      setIsDownloadingPdf(false);
+    }
   }
 
   return (
@@ -150,8 +157,8 @@ export function App() {
                 Text
               </label>
             </div>
-            <button disabled={references.length === 0} type="button" onClick={handleDownloadPdf}>
-              Download PDF
+            <button disabled={references.length === 0 || isDownloadingPdf} type="button" onClick={handleDownloadPdf}>
+              {isDownloadingPdf ? "Preparing PDF..." : "Download PDF"}
             </button>
           </div>
         </div>

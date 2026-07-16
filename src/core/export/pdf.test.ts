@@ -1,11 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Passage } from "../bible/types";
 
 import { buildPassagePdf } from "./pdf";
 
 describe("buildPassagePdf", () => {
-  it("builds a PDF byte stream with reference and verse text", () => {
+  beforeEach(() => {
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (url.startsWith("/src/assets/fonts/")) {
+        const bytes = await readFile(join(process.cwd(), url));
+        return new Response(new Uint8Array(bytes));
+      }
+
+      return originalFetch(url);
+    });
+  });
+
+  it("builds a PDF byte stream with reference and verse text", async () => {
     const passage = {
       normalized: "John 3:16",
       verses: [{ bookId: "john", chapter: 3, verse: 16, text: "For God so loved the world." }],
@@ -27,13 +42,10 @@ describe("buildPassagePdf", () => {
       versionName: "World English Bible",
     } satisfies Passage;
 
-    const bytes = buildPassagePdf({ title: "Sermon Passages", mode: "references-and-text", passages: [passage] });
+    const bytes = await buildPassagePdf({ title: "Sermon Passages", mode: "references-and-text", passages: [passage] });
     const text = new TextDecoder().decode(bytes);
 
-    expect(text.startsWith("%PDF-1.4")).toBe(true);
-    expect(text).toContain("/BaseFont /Helvetica-Bold");
-    expect(text).toContain("/F2 10 Tf");
-    expect(text).toContain("John 3:16");
-    expect(text).toContain("For God so loved the world.");
+    expect(text.startsWith("%PDF-")).toBe(true);
+    expect(bytes.length).toBeGreaterThan(5_000);
   });
 });

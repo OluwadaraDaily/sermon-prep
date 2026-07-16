@@ -1,3 +1,9 @@
+import fontkit from "@pdf-lib/fontkit";
+import { PDFDocument, rgb, type PDFFont } from "pdf-lib";
+
+import frauncesUrl from "../../assets/fonts/Fraunces.ttf?url";
+import manropeUrl from "../../assets/fonts/Manrope.ttf?url";
+
 import type { Passage } from "../bible/types";
 
 export type PdfExportMode = "references" | "references-and-text";
@@ -9,39 +15,59 @@ export type PdfExportInput = {
   generatedAt?: Date;
 };
 
+type PdfLine = {
+  text: string;
+  header?: boolean;
+  size?: number;
+};
+
+type PdfFonts = {
+  body: PDFFont;
+  header: PDFFont;
+};
+
 const pageWidth = 612;
 const pageHeight = 792;
 const margin = 54;
-const lineHeight = 14;
 const bodySize = 10;
+const titleSize = 18;
+const headerSize = 12;
+const lineHeight = 15;
+const bodyWeightOffset = 0.14;
+const textColor = rgb(0.12, 0.16, 0.2);
+const mutedColor = rgb(0.35, 0.4, 0.47);
 
-type PdfLine = {
-  text: string;
-  bold?: boolean;
-};
+export async function buildPassagePdf(input: PdfExportInput): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
 
-export function buildPassagePdf(input: PdfExportInput): Uint8Array {
-  const lines = buildLines(input);
-  const pages = paginate(lines, 48);
-  const pageCount = Math.max(1, pages.length);
-  const objects: string[] = [];
-  const pageIds = Array.from({ length: pageCount }, (_, index) => 5 + index);
-  const contentIds = Array.from({ length: pageCount }, (_, index) => 5 + pageCount + index);
+  const fonts = await loadFonts(pdfDoc);
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
+  let y = pageHeight - margin;
 
-  objects[0] = "<< /Type /Catalog /Pages 2 0 R >>";
-  objects[1] = `<< /Type /Pages /Count ${pageCount} /Kids [${pageIds.map((id) => `${id} 0 R`).join(" ")}] >>`;
-  objects[2] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
-  objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
+  for (const line of buildLines(input)) {
+    const size = line.size ?? (line.header ? headerSize : bodySize);
+    const font = line.header ? fonts.header : fonts.body;
+    const color = line.header ? textColor : mutedColor;
+    const wrapped = line.text ? wrapLine(line.text, font, size, pageWidth - margin * 2) : [""];
 
-  for (let index = 0; index < pageCount; index += 1) {
-    const pageId = pageIds[index];
-    const contentId = contentIds[index];
-    objects[pageId - 1] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentId} 0 R >>`;
-    const stream = renderPage(pages[index] ?? []);
-    objects[contentId - 1] = `<< /Length ${byteLength(stream)} >>\nstream\n${stream}\nendstream`;
+    for (const text of wrapped) {
+      if (y < margin) {
+        page = pdfDoc.addPage([pageWidth, pageHeight]);
+        y = pageHeight - margin;
+      }
+
+      if (text) {
+        page.drawText(text, { x: margin, y, size, font, color });
+        if (!line.header) {
+          page.drawText(text, { x: margin + bodyWeightOffset, y, size, font, color });
+        }
+      }
+      y -= line.header ? lineHeight + 2 : lineHeight;
+    }
   }
 
-  return encodePdf(objects);
+  return pdfDoc.save();
 }
 
 export function downloadPdf(bytes: Uint8Array, fileName = "sermon-passages.pdf"): void {
@@ -56,12 +82,30 @@ export function downloadPdf(bytes: Uint8Array, fileName = "sermon-passages.pdf")
   URL.revokeObjectURL(url);
 }
 
+async function loadFonts(pdfDoc: PDFDocument): Promise<PdfFonts> {
+  const [bodyBytes, headerBytes] = await Promise.all([fetchFont(manropeUrl), fetchFont(frauncesUrl)]);
+
+  return {
+    body: await pdfDoc.embedFont(bodyBytes, { subset: true }),
+    header: await pdfDoc.embedFont(headerBytes, { subset: true }),
+  };
+}
+
+async function fetchFont(url: string): Promise<ArrayBuffer> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Unable to load PDF font: ${url}`);
+  }
+
+  return response.arrayBuffer();
+}
+
 function buildLines(input: PdfExportInput): PdfLine[] {
   const generatedAt = input.generatedAt ?? new Date();
-  const lines = [
-    { text: input.title || "Sermon Passages", bold: true },
-    { text: `World English Bible passages prepared ${generatedAt.toLocaleDateString()}`, bold: true },
-    { text: "World English Bible, public domain. Source: https://ebible.org/engwebp/", bold: true },
+  const lines: PdfLine[] = [
+    { text: input.title || "Sermon Passages", header: true, size: titleSize },
+    { text: `World English Bible passages prepared ${generatedAt.toLocaleDateString()}`, header: true },
+    { text: "World English Bible, public domain. Source: https://ebible.org/engwebp/", header: true },
     { text: "" },
   ];
 
@@ -71,11 +115,11 @@ function buildLines(input: PdfExportInput): PdfLine[] {
   }
 
   for (const passage of input.passages) {
-    lines.push({ text: passage.normalized, bold: true });
+    lines.push({ text: passage.normalized, header: true });
 
     if (input.mode === "references-and-text") {
       for (const verse of passage.verses) {
-        lines.push(...wrapLine(`${verse.chapter}:${verse.verse} ${verse.text}`, 92).map((text) => ({ text })));
+        lines.push({ text: `${verse.chapter}:${verse.verse} ${verse.text}` });
       }
     }
 
@@ -85,43 +129,14 @@ function buildLines(input: PdfExportInput): PdfLine[] {
   return lines;
 }
 
-function paginate(lines: PdfLine[], maxLinesPerPage: number): PdfLine[][] {
-  const pages: PdfLine[][] = [];
-  for (let index = 0; index < lines.length; index += maxLinesPerPage) {
-    pages.push(lines.slice(index, index + maxLinesPerPage));
-  }
-
-  return pages;
-}
-
-function renderPage(lines: PdfLine[]): string {
-  const commands = ["BT", `/F1 ${bodySize} Tf`, `${margin} ${pageHeight - margin} Td`];
-  let currentFont = "F1";
-
-  lines.forEach((line, index) => {
-    if (index > 0) {
-      commands.push(`0 -${lineHeight} Td`);
-    }
-    const nextFont = line.bold ? "F2" : "F1";
-    if (nextFont !== currentFont) {
-      commands.push(`/${nextFont} ${bodySize} Tf`);
-      currentFont = nextFont;
-    }
-    commands.push(`(${escapePdfText(line.text)}) Tj`);
-  });
-
-  commands.push("ET");
-  return commands.join("\n");
-}
-
-function wrapLine(line: string, maxLength: number): string[] {
+function wrapLine(line: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const words = line.split(/\s+/);
   const lines: string[] = [];
   let current = "";
 
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length <= maxLength) {
+    if (font.widthOfTextAtSize(candidate, size) <= maxWidth) {
       current = candidate;
     } else {
       if (current) {
@@ -136,46 +151,4 @@ function wrapLine(line: string, maxLength: number): string[] {
   }
 
   return lines;
-}
-
-function escapePdfText(value: string): string {
-  return sanitizePdfText(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
-}
-
-function sanitizePdfText(value: string): string {
-  return value
-    .normalize("NFKD")
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201c\u201d]/g, '"')
-    .replace(/[\u2013\u2014]/g, "-")
-    .replace(/[^\x20-\x7E]/g, "");
-}
-
-function encodePdf(objects: string[]): Uint8Array {
-  const encoder = new TextEncoder();
-  const parts: string[] = ["%PDF-1.4\n"];
-  const offsets = [0];
-  let position = byteLength(parts[0]);
-
-  objects.forEach((object, index) => {
-    offsets.push(position);
-    const part = `${index + 1} 0 obj\n${object}\nendobj\n`;
-    parts.push(part);
-    position += byteLength(part);
-  });
-
-  const xrefStart = position;
-  const xref = [
-    `xref\n0 ${objects.length + 1}\n`,
-    "0000000000 65535 f \n",
-    ...offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`),
-    `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`,
-  ].join("");
-  parts.push(xref);
-
-  return encoder.encode(parts.join(""));
-}
-
-function byteLength(value: string): number {
-  return new TextEncoder().encode(value).length;
 }
