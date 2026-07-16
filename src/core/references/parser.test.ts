@@ -55,6 +55,29 @@ describe("parseBibleReferences", () => {
     expect(references.map((reference) => reference.normalized)).toEqual(["John 3:16", "John 4:1-3"]);
   });
 
+  it("does not swallow numbered book aliases after a comma", () => {
+    const references = parseBibleReferences("John 7, John 10, 1Cor. 10:10-15");
+
+    expect(references.map((reference) => reference.normalized)).toEqual([
+      "John 7",
+      "John 10",
+      "1 Corinthians 10:10-15",
+    ]);
+  });
+
+  it("surfaces book-only numbered aliases for review", () => {
+    const references = parseBibleReferences("1 Cor, 2 Tim");
+
+    expect(references.map((reference) => reference.normalized)).toEqual(["1 Corinthians", "2 Timothy"]);
+    expect(references.map((reference) => reference.status)).toEqual(["needs-review", "needs-review"]);
+  });
+
+  it("does not match non-numbered book aliases without a chapter", () => {
+    const references = parseBibleReferences("We talked about John and Romans.");
+
+    expect(references).toEqual([]);
+  });
+
   it("parses verse lists from the current chapter", () => {
     const references = parseBibleReferences("Ps 23:1, 4-6");
 

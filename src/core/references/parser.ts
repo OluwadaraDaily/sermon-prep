@@ -31,7 +31,7 @@ const aliasEntries = bibleBooks
   )
   .sort((a, b) => b.alias.length - a.alias.length);
 
-const bookAliasRegex = new RegExp(`(${aliasEntries.map((entry) => entry.pattern).join("|")})\\.?\\s*(?=\\d)`, "giu");
+const bookAliasRegex = new RegExp(`(${aliasEntries.map((entry) => entry.pattern).join("|")})\\.?\\s*`, "giu");
 
 export function parseBibleReferences(source: string): BibleReference[] {
   const references: BibleReference[] = [];
@@ -50,8 +50,18 @@ export function parseBibleReferences(source: string): BibleReference[] {
       continue;
     }
 
+    if (!canStartReference(source, bookAliasRegex.lastIndex, entry.alias)) {
+      continue;
+    }
+
     const series = parseSeries(source, bookAliasRegex.lastIndex, entry.book, sourceStart);
     if (series.references.length === 0) {
+      const bookOnly = parseBookOnlyReference(source, sourceStart, bookAliasRegex.lastIndex, entry.book);
+      if (!bookOnly) {
+        continue;
+      }
+
+      references.push(bookOnly);
       continue;
     }
 
@@ -118,6 +128,10 @@ function parseSeries(source: string, offset: number, book: BibleBook, bookStart:
 
     const nextStart = skipSpaces(source, next.end);
     if (!/^\d/.test(source.slice(nextStart))) {
+      break;
+    }
+
+    if (startsNumberedBookAlias(source, nextStart)) {
       break;
     }
 
@@ -239,6 +253,31 @@ function toBibleReference(source: string, sourceStart: number, sourceEnd: number
   };
 }
 
+function parseBookOnlyReference(source: string, sourceStart: number, sourceEnd: number, book: BibleBook): BibleReference | null {
+  if (!/^[123]/.test(book.name)) {
+    return null;
+  }
+
+  const draft = {
+    bookId: book.id,
+    chapterStart: 1,
+    verseStart: null,
+    chapterEnd: 1,
+    verseEnd: null,
+  };
+
+  return {
+    raw: source.slice(sourceStart, sourceEnd).trim(),
+    normalized: book.name,
+    sourceStart,
+    sourceEnd,
+    ...draft,
+    confidence: 0.55,
+    status: "needs-review",
+    issues: ["Book-only numbered reference detected; add a chapter or verse before export."],
+  };
+}
+
 function aliasToPattern(alias: string): string {
   return alias
     .split(/\s+/)
@@ -257,6 +296,24 @@ function findAliasEntry(rawAlias: string): AliasEntry | undefined {
 
 function normalizeAlias(value: string): string {
   return value.toLowerCase().replace(/\./g, "").replace(/\s+/g, "");
+}
+
+function canStartReference(source: string, offset: number, alias: string): boolean {
+  if (/^\d/.test(source.slice(offset))) {
+    return true;
+  }
+
+  return /^[123]/.test(alias) && isBookOnlyBoundary(source, offset);
+}
+
+function isBookOnlyBoundary(source: string, offset: number): boolean {
+  const next = source[offset];
+  return next === undefined || /[\s,;.]/.test(next);
+}
+
+function startsNumberedBookAlias(source: string, offset: number): boolean {
+  const rest = source.slice(offset);
+  return aliasEntries.some((entry) => /^[123]/.test(entry.alias) && new RegExp(`^${entry.pattern}\\.?\\s*\\d`, "iu").test(rest));
 }
 
 function hasBoundaryBefore(source: string, index: number): boolean {

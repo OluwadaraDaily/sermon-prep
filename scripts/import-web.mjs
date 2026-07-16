@@ -113,12 +113,17 @@ function extractVerses(html) {
   const verses = [];
   for (let index = 1; index < parts.length; index += 2) {
     const verse = Number(parts[index]);
-    const text = stripHtml(parts[index + 1] ?? "");
+    const verseHtml = stripAfterVerseContent(parts[index + 1] ?? "");
+    const text = stripHtml(verseHtml);
     if (verse > 0 && text) {
       verses[verse - 1] = text;
     }
   }
   return verses;
+}
+
+function stripAfterVerseContent(value) {
+  return value.split(/<ul class=['"]tnav['"]|<div class=['"]footnote['"]|<div class=['"]copyright['"]/)[0] ?? "";
 }
 
 const files = execFileSync("unzip", ["-Z1", archivePath], { encoding: "utf8" }).split(/\r?\n/);
