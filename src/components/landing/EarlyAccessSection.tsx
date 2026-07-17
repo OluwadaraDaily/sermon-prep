@@ -8,9 +8,25 @@ export function EarlyAccessSection() {
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
 
-  function handleJoin(event: FormEvent<HTMLFormElement>) {
+  async function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (email.trim()) setJoined(true);
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return;
+
+    try {
+      const response = await fetch("/api/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+
+      if (response.ok) {
+        setJoined(true);
+      }
+    } catch (error) {
+      // Handle error silently for now
+      console.error("Failed to submit invite request:", error);
+    }
   }
 
   return (

@@ -34,7 +34,7 @@ export function NotesPane({
         value={notes}
       />
       <div className="notes-footer">
-        <p className="status-line">
+        <p className="status-line" role="status" aria-live="polite">
           <span className="status-dot" /> {statusMessage}
         </p>
         <button

@@ -25,6 +25,7 @@ describe("buildPassagePdf", () => {
       normalized: "John 3:16",
       verses: [{ bookId: "john", chapter: 3, verse: 16, text: "For God so loved the world." }],
       reference: {
+        id: "test-ref-1",
         raw: "John 3:16",
         normalized: "John 3:16",
         sourceStart: 0,

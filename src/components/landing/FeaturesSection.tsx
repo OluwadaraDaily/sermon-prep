@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { features, type FeatureContent } from "../../content/landingContent";
 import { ArrowIcon, Icon } from "../common/Icons";
@@ -32,10 +32,12 @@ export function FeaturesSection() {
 }
 
 function FeatureCard({ feature }: { feature: FeatureContent }) {
+  const reduceMotion = Boolean(useReducedMotion());
+
   return (
     <motion.article
       className={`feature-card ${feature.accent} reveal`}
-      whileHover={{ y: -8 }}
+      whileHover={reduceMotion ? undefined : { y: -8 }}
       transition={{ duration: 0.25 }}
     >
       <div className="feature-card-top">

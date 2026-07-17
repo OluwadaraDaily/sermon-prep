@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { faqs } from "../../content/landingContent";
 
 export function FaqSection() {
   const [openFaq, setOpenFaq] = useState(0);
+  const answerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   return (
     <section className="faq-section snap-section" id="faq">
@@ -36,7 +37,17 @@ export function FaqSection() {
                 <strong>{faq.question}</strong>
                 <i>{isOpen ? "−" : "+"}</i>
               </button>
-              <div className="faq-answer" style={{ maxHeight: isOpen ? 160 : 0 }}>
+              <div
+                className="faq-answer"
+                ref={(el) => {
+                  answerRefs.current[index] = el;
+                }}
+                style={{
+                  maxHeight: isOpen
+                    ? `${answerRefs.current[index]?.scrollHeight ?? 160}px`
+                    : "0px",
+                }}
+              >
                 <p>{faq.answer}</p>
               </div>
             </div>

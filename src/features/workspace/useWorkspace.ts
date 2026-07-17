@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import type { BibleReference, Passage, ReferenceStatus } from "../../core/bible/types";
 import { buildPassagePdf, downloadPdf, type PdfExportMode } from "../../core/export/pdf";
@@ -19,6 +19,7 @@ export function useWorkspace() {
   const [fileName, setFileName] = useState("sermon-passages");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [statusMessage, setStatusMessage] = useState(initialStatusMessage);
+  const refreshGenerationRef = useRef(0);
 
   const approvedPassages = useMemo(
     () =>
@@ -30,21 +31,35 @@ export function useWorkspace() {
   );
 
   async function refreshPassages(nextReferences: BibleReference[]) {
+    // Increment generation to invalidate previous requests
+    const currentGeneration = ++refreshGenerationRef.current;
     const nextPassages: Record<string, Passage> = {};
+    const validReferences = nextReferences.filter((reference) => reference.status === "valid");
 
-    await Promise.all(
-      nextReferences
-        .filter((reference) => reference.status === "valid")
-        .map(async (reference) => {
-          nextPassages[referenceKey(reference)] = await localWebProvider.getPassage(
-            "web",
-            reference,
+    await Promise.allSettled(
+      validReferences.map(async (reference) => {
+        try {
+          const passage = await localWebProvider.getPassage("web", reference);
+          // Only store if this generation is still current
+          if (currentGeneration === refreshGenerationRef.current) {
+            nextPassages[referenceKey(reference)] = passage;
+          }
+        } catch (error) {
+          console.error(
+            `Failed to fetch passage for ${referenceKey(reference)}:`,
+            error,
           );
-        }),
+          // Continue with other passages
+        }
+      }),
     );
 
-    setPassages(nextPassages);
-    return nextPassages;
+    // Only update if this generation is still current
+    if (currentGeneration === refreshGenerationRef.current) {
+      setPassages(nextPassages);
+      return nextPassages;
+    }
+    return passages;
   }
 
   async function findPassages() {
@@ -65,6 +80,14 @@ export function useWorkspace() {
   }
 
   function changeReferenceText(index: number, value: string) {
+    const reference = references[index];
+    if (!reference) return;
+
+    // Clear cached passage when text changes
+    const nextPassages = { ...passages };
+    delete nextPassages[referenceKey(reference)];
+    setPassages(nextPassages);
+
     setReferences(
       references.map((reference, referenceIndex) =>
         referenceIndex === index
@@ -85,10 +108,24 @@ export function useWorkspace() {
     if (!reference) return;
 
     const parsed = parseSingleBibleReference(reference.normalized);
-    if (parsed) updateReference(index, parsed);
+    if (parsed) {
+      // Preserve the original id when updating with parsed reference
+      updateReference(index, { ...parsed, id: reference.id });
+    }
   }
 
   function changeReferenceStatus(index: number, status: ReferenceStatus) {
+    const reference = references[index];
+    if (!reference) return;
+
+    // Prevent transitioning to valid if reference has validation issues
+    if (
+      status === "valid" &&
+      reference.issues.some((issue) => issue === "Edited reference has not been validated yet.")
+    ) {
+      return;
+    }
+
     const nextReferences = references.map((reference, referenceIndex) =>
       referenceIndex === index
         ? { ...reference, status, issues: status === "valid" ? [] : reference.issues }

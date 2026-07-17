@@ -8,18 +8,20 @@ const testimonialIntervalMs = 6200;
 export function TestimonialsSection() {
   const reduceMotion = Boolean(useReducedMotion());
   const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const currentTestimonial = testimonials[testimonialIndex];
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion || isPaused) return;
     const timer = window.setInterval(
       () => setTestimonialIndex((current) => (current + 1) % testimonials.length),
       testimonialIntervalMs,
     );
     return () => window.clearInterval(timer);
-  }, [reduceMotion]);
+  }, [reduceMotion, isPaused]);
 
   function moveTestimonial(direction: number) {
+    setIsPaused(true);
     setTestimonialIndex(
       (current) => (current + direction + testimonials.length) % testimonials.length,
     );
@@ -68,6 +70,13 @@ export function TestimonialsSection() {
                 }}
               />
             </div>
+            <button
+              aria-label={isPaused ? "Resume auto-rotation" : "Pause auto-rotation"}
+              data-cursor
+              onClick={() => setIsPaused(!isPaused)}
+            >
+              <span>{isPaused ? "▶" : "❚❚"}</span>
+            </button>
             <button
               aria-label="Previous testimonial"
               data-cursor

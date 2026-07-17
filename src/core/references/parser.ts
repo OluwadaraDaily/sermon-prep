@@ -33,6 +33,12 @@ const aliasEntries = bibleBooks
 
 const bookAliasRegex = new RegExp(`(${aliasEntries.map((entry) => entry.pattern).join("|")})\\.?\\s*`, "giu");
 
+let referenceIdCounter = 0;
+
+function generateReferenceId(): string {
+  return `ref_${Date.now()}_${referenceIdCounter++}`;
+}
+
 export function parseBibleReferences(source: string): BibleReference[] {
   const references: BibleReference[] = [];
   bookAliasRegex.lastIndex = 0;
@@ -242,6 +248,7 @@ function toBibleReference(source: string, sourceStart: number, sourceEnd: number
   const status = validation.status === "valid" && span.issues.length > 0 ? "needs-review" : validation.status;
 
   return {
+    id: generateReferenceId(),
     raw: source.slice(sourceStart, sourceEnd),
     normalized: normalizeBibleReference(draft),
     sourceStart,
@@ -267,6 +274,7 @@ function parseBookOnlyReference(source: string, sourceStart: number, sourceEnd: 
   };
 
   return {
+    id: generateReferenceId(),
     raw: source.slice(sourceStart, sourceEnd).trim(),
     normalized: book.name,
     sourceStart,
