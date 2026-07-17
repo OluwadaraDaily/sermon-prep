@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import type { BibleReference, Passage, ReferenceStatus } from "../../core/bible/types";
 import { buildPassagePdf, downloadPdf, type PdfExportMode } from "../../core/export/pdf";
@@ -19,6 +19,8 @@ export function useWorkspace() {
   const [fileName, setFileName] = useState("sermon-passages");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [statusMessage, setStatusMessage] = useState(initialStatusMessage);
+  const refreshGeneration = useRef(0);
+  const editedReferenceIds = useRef(new Set<string>());
 
   const approvedPassages = useMemo(
     () =>
@@ -30,43 +32,87 @@ export function useWorkspace() {
   );
 
   async function refreshPassages(nextReferences: BibleReference[]) {
+    const requestGeneration = refreshGeneration.current + 1;
+    refreshGeneration.current = requestGeneration;
     const nextPassages: Record<string, Passage> = {};
 
-    await Promise.all(
+    const results = await Promise.allSettled(
       nextReferences
         .filter((reference) => reference.status === "valid")
-        .map(async (reference) => {
-          nextPassages[referenceKey(reference)] = await localWebProvider.getPassage(
-            "web",
-            reference,
-          );
-        }),
+        .map(async (reference) => ({
+          key: referenceKey(reference),
+          passage: await localWebProvider.getPassage("web", reference),
+        })),
     );
 
-    setPassages(nextPassages);
-    return nextPassages;
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        nextPassages[result.value.key] = result.value.passage;
+      }
+    }
+
+    const failedCount = results.filter((result) => result.status === "rejected").length;
+    const isCurrent = requestGeneration === refreshGeneration.current;
+
+    if (isCurrent) {
+      setPassages(nextPassages);
+      if (failedCount > 0) {
+        setStatusMessage(
+          failedCount === 1
+            ? "One passage could not be loaded. Please review the reference."
+            : `${failedCount} passages could not be loaded. Please review the references.`,
+        );
+      }
+    }
+
+    return { failedCount, isCurrent, passages: nextPassages };
   }
 
   async function findPassages() {
     const parsed = parseBibleReferences(notes);
     setReferences(parsed);
-    await refreshPassages(parsed);
+    editedReferenceIds.current.clear();
+    const refreshResult = await refreshPassages(parsed);
+    if (!refreshResult.isCurrent) return;
+
+    const foundMessage =
+      parsed.length === 1 ? "Found 1 reference." : `Found ${parsed.length} references.`;
     setStatusMessage(
-      parsed.length === 1 ? "Found 1 reference." : `Found ${parsed.length} references.`,
+      refreshResult.failedCount > 0
+        ? `${foundMessage} Some passages could not be loaded.`
+        : foundMessage,
     );
   }
 
   function updateReference(index: number, nextReference: BibleReference) {
+    const currentReference = references[index];
+    if (!currentReference) return;
+
+    const preservedReference = { ...nextReference, id: currentReference.id };
+    if (preservedReference.status === "valid") {
+      editedReferenceIds.current.delete(currentReference.id);
+    }
+
     const nextReferences = references.map((reference, referenceIndex) =>
-      referenceIndex === index ? nextReference : reference,
+      referenceIndex === index ? preservedReference : reference,
     );
     setReferences(nextReferences);
     void refreshPassages(nextReferences);
   }
 
   function changeReferenceText(index: number, value: string) {
-    setReferences(
-      references.map((reference, referenceIndex) =>
+    const currentReference = references[index];
+    if (!currentReference) return;
+
+    editedReferenceIds.current.add(currentReference.id);
+    refreshGeneration.current += 1;
+    setPassages((currentPassages) => {
+      const nextPassages = { ...currentPassages };
+      delete nextPassages[referenceKey(currentReference)];
+      return nextPassages;
+    });
+    setReferences((currentReferences) =>
+      currentReferences.map((reference, referenceIndex) =>
         referenceIndex === index
           ? {
               ...reference,
@@ -89,6 +135,10 @@ export function useWorkspace() {
   }
 
   function changeReferenceStatus(index: number, status: ReferenceStatus) {
+    const currentReference = references[index];
+    if (!currentReference) return;
+    if (status === "valid" && editedReferenceIds.current.has(currentReference.id)) return;
+
     const nextReferences = references.map((reference, referenceIndex) =>
       referenceIndex === index
         ? { ...reference, status, issues: status === "valid" ? [] : reference.issues }
@@ -110,7 +160,8 @@ export function useWorkspace() {
     setIsDownloadingPdf(true);
 
     try {
-      const currentPassages = await refreshPassages(references);
+      const refreshResult = await refreshPassages(references);
+      const currentPassages = refreshResult.passages;
       const validPassages = references
         .filter((reference) => reference.status === "valid")
         .map(

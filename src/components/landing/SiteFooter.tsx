@@ -1,8 +1,38 @@
+import { useState, type FormEvent } from "react";
 import { Brand } from "../common/Brand";
 import { ArrowIcon } from "../common/Icons";
 import { Link } from "react-router-dom";
 
+import { submitEmailSignup } from "./emailSignup";
+
+type NewsletterStatus = "idle" | "pending" | "success" | "error";
+
 export function SiteFooter() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<NewsletterStatus>("idle");
+
+  async function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || status === "pending") return;
+
+    setStatus("pending");
+
+    try {
+      await submitEmailSignup("newsletter", trimmedEmail);
+      setStatus("success");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  const newsletterMessage =
+    status === "error"
+      ? "We couldn’t subscribe you. Please try again."
+      : status === "success"
+        ? "You’re subscribed. We’ll write when there’s something worth sharing."
+        : "";
+
   return (
     <footer className="site-footer">
       <div className="footer-main">
@@ -19,15 +49,34 @@ export function SiteFooter() {
             <br />
             <em>for the study.</em>
           </h3>
-          <form onSubmit={(event) => event.preventDefault()}>
+          <form aria-describedby="newsletter-status" onSubmit={handleNewsletterSubmit}>
             <label className="sr-only" htmlFor="newsletter-email">
               Email address
             </label>
-            <input id="newsletter-email" placeholder="Your email address" type="email" />
-            <button aria-label="Subscribe to newsletter" data-cursor type="submit">
+            <input
+              id="newsletter-email"
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (status === "error") setStatus("idle");
+              }}
+              placeholder="Your email address"
+              required
+              disabled={status === "pending" || status === "success"}
+              type="email"
+              value={email}
+            />
+            <button
+              aria-label="Subscribe to newsletter"
+              data-cursor
+              disabled={status === "pending" || status === "success"}
+              type="submit"
+            >
               <ArrowIcon />
             </button>
           </form>
+          <p aria-live="polite" className="newsletter-status" id="newsletter-status">
+            {status === "pending" ? "Subscribing…" : newsletterMessage ?? ""}
+          </p>
         </div>
         <div className="footer-links">
           <div>

@@ -91,6 +91,16 @@ describe("parseBibleReferences", () => {
     expect(references.map((reference) => reference.normalized)).toEqual(["John 3:16", "Romans 8:1"]);
   });
 
+  it("assigns distinct stable ids to detected references", () => {
+    const references = parseBibleReferences("John 3:16; Romans 8:1");
+
+    expect(references.map((reference) => reference.id)).toEqual([
+      expect.stringMatching(/^reference-/),
+      expect.stringMatching(/^reference-/),
+    ]);
+    expect(references[0].id).not.toBe(references[1].id);
+  });
+
   it("preserves source positions and raw text", () => {
     const source = "Opening text: Gen. 1:1-3.";
     const [reference] = parseBibleReferences(source);

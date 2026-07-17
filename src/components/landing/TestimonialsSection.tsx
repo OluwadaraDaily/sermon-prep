@@ -8,18 +8,20 @@ const testimonialIntervalMs = 6200;
 export function TestimonialsSection() {
   const reduceMotion = Boolean(useReducedMotion());
   const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const currentTestimonial = testimonials[testimonialIndex];
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion || isPaused) return;
     const timer = window.setInterval(
       () => setTestimonialIndex((current) => (current + 1) % testimonials.length),
       testimonialIntervalMs,
     );
     return () => window.clearInterval(timer);
-  }, [reduceMotion]);
+  }, [isPaused, reduceMotion]);
 
   function moveTestimonial(direction: number) {
+    setIsPaused(true);
     setTestimonialIndex(
       (current) => (current + direction + testimonials.length) % testimonials.length,
     );
@@ -69,9 +71,20 @@ export function TestimonialsSection() {
               />
             </div>
             <button
+              aria-label={isPaused ? "Resume testimonials" : "Pause testimonials"}
+              aria-pressed={isPaused}
+              className="quote-pause"
+              data-cursor
+              onClick={() => setIsPaused((paused) => !paused)}
+              type="button"
+            >
+              {isPaused ? "Resume" : "Pause"}
+            </button>
+            <button
               aria-label="Previous testimonial"
               data-cursor
               onClick={() => moveTestimonial(-1)}
+              type="button"
             >
               <span>←</span>
             </button>
@@ -79,6 +92,7 @@ export function TestimonialsSection() {
               aria-label="Next testimonial"
               data-cursor
               onClick={() => moveTestimonial(1)}
+              type="button"
             >
               <span>→</span>
             </button>

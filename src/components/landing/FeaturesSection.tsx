@@ -1,9 +1,11 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { features, type FeatureContent } from "../../content/landingContent";
 import { ArrowIcon, Icon } from "../common/Icons";
 
 export function FeaturesSection() {
+  const reduceMotion = Boolean(useReducedMotion());
+
   return (
     <section className="feature-section snap-section" id="features">
       <div className="section-heading reveal">
@@ -24,18 +26,18 @@ export function FeaturesSection() {
       </div>
       <div className="feature-grid">
         {features.map((feature) => (
-          <FeatureCard feature={feature} key={feature.number} />
+          <FeatureCard feature={feature} key={feature.number} reduceMotion={reduceMotion} />
         ))}
       </div>
     </section>
   );
 }
 
-function FeatureCard({ feature }: { feature: FeatureContent }) {
+function FeatureCard({ feature, reduceMotion }: { feature: FeatureContent; reduceMotion: boolean }) {
   return (
     <motion.article
       className={`feature-card ${feature.accent} reveal`}
-      whileHover={{ y: -8 }}
+      whileHover={reduceMotion ? undefined : { y: -8 }}
       transition={{ duration: 0.25 }}
     >
       <div className="feature-card-top">

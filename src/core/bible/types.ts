@@ -1,6 +1,7 @@
 export type ReferenceStatus = "valid" | "needs-review" | "invalid";
 
 export type BibleReference = {
+  id: string;
   raw: string;
   normalized: string;
   sourceStart: number;

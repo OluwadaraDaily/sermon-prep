@@ -92,8 +92,11 @@ export function HeroSection({ reduceMotion, visualRef }: HeroSectionProps) {
                   <CheckIcon />
                 </div>
                 <p>
-                  “Suffering produces perseverance; perseverance, character; and
-                  character, hope.”
+                  “Not only this, but we also rejoice in our sufferings, knowing that
+                  suffering produces perseverance; and perseverance, proven character;
+                  and proven character, hope; and hope doesn’t disappoint us, because
+                  God’s love has been poured into our hearts through the Holy Spirit who
+                  was given to us.”
                 </p>
                 <small>hope · perseverance</small>
               </motion.div>
@@ -111,7 +114,11 @@ export function HeroSection({ reduceMotion, visualRef }: HeroSectionProps) {
                   <span>Psalm 42:5</span>
                   <CheckIcon />
                 </div>
-                <p>“Why, my soul, are you downcast? Put your hope in God.”</p>
+                <p>
+                  “Why are you in despair, my soul? Why are you disturbed within me? Hope
+                  in God! For I shall still praise him for the saving help of his
+                  presence.”
+                </p>
                 <small>longing · trust</small>
               </motion.div>
               <div className="demo-more">

@@ -47,7 +47,7 @@ export function ReviewPane({
 
       <ExportControls
         fileName={fileName}
-        isDisabled={references.length === 0}
+        isDisabled={!references.some((reference) => reference.status === "valid")}
         isDownloading={isDownloadingPdf}
         mode={mode}
         onDownload={onDownloadPdf}
@@ -62,7 +62,7 @@ export function ReviewPane({
           references.map((reference, index) => (
             <ReferenceRow
               index={index}
-              key={`${reference.sourceStart}-${reference.normalized}`}
+              key={reference.id}
               onRemove={onReferenceRemove}
               onStatusChange={onReferenceStatusChange}
               onTextBlur={onReferenceTextBlur}

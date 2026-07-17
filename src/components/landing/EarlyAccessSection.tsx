@@ -2,15 +2,31 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useState, type FormEvent } from "react";
 
 import { ArrowIcon, CheckIcon } from "../common/Icons";
+import { submitEmailSignup } from "./emailSignup";
 
 export function EarlyAccessSection() {
   const reduceMotion = Boolean(useReducedMotion());
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  function handleJoin(event: FormEvent<HTMLFormElement>) {
+  async function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (email.trim()) setJoined(true);
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMessage("");
+
+    try {
+      await submitEmailSignup("invite", trimmedEmail);
+      setJoined(true);
+    } catch {
+      setErrorMessage("We couldn’t submit your request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -71,11 +87,21 @@ export function EarlyAccessSection() {
                 type="email"
                 value={email}
               />
-              <button className="button button-dark" data-cursor type="submit">
-                Request an invite <ArrowIcon />
+              <button
+                className="button button-dark"
+                data-cursor
+                disabled={isSubmitting}
+                type="submit"
+              >
+                {isSubmitting ? "Sending…" : "Request an invite"} <ArrowIcon />
               </button>
             </div>
             <small>We’ll only send the good kind of email.</small>
+            {errorMessage ? (
+              <small className="form-message" role="alert">
+                {errorMessage}
+              </small>
+            ) : null}
           </form>
         )}
         <div className="access-card-foot">

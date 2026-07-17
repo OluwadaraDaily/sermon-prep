@@ -36,8 +36,10 @@ export function FaqSection() {
                 <strong>{faq.question}</strong>
                 <i>{isOpen ? "−" : "+"}</i>
               </button>
-              <div className="faq-answer" style={{ maxHeight: isOpen ? 160 : 0 }}>
-                <p>{faq.answer}</p>
+              <div className={`faq-answer ${isOpen ? "is-open" : ""}`}>
+                <div className="faq-answer-inner">
+                  <p>{faq.answer}</p>
+                </div>
               </div>
             </div>
           );
