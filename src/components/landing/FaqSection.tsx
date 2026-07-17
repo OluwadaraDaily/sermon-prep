@@ -1,10 +1,9 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { faqs } from "../../content/landingContent";
 
 export function FaqSection() {
   const [openFaq, setOpenFaq] = useState(0);
-  const answerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   return (
     <section className="faq-section snap-section" id="faq">

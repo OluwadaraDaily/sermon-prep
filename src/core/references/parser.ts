@@ -34,12 +34,6 @@ const aliasEntries = bibleBooks
 const bookAliasRegex = new RegExp(`(${aliasEntries.map((entry) => entry.pattern).join("|")})\\.?\\s*`, "giu");
 let nextReferenceId = 0;
 
-let referenceIdCounter = 0;
-
-function generateReferenceId(): string {
-  return `ref_${Date.now()}_${referenceIdCounter++}`;
-}
-
 export function parseBibleReferences(source: string): BibleReference[] {
   const references: BibleReference[] = [];
   bookAliasRegex.lastIndex = 0;
