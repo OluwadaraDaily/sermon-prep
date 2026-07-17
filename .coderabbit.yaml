@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: en-US
+tone_instructions: >-
+  Be concise, direct, and constructive. Prioritize actionable correctness,
+  accessibility, privacy, security concerns and maintainability findings over stylistic preferences.
+
+reviews:
+  # Start with lower-noise feedback. Change to "assertive" after the team has
+  # calibrated the review rules and wants more exhaustive comments.
+  profile: chill
+
+  # CodeRabbit is advisory initially. Deterministic GitHub checks remain the
+  # merge gate, and human reviewers remain responsible for final approval.
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+
+  # Large, generated, or binary assets do not benefit from semantic AI review.
+  path_filters:
+    - "!dist/**"
+    - "!data/bibles/web/verses.json"
+    - "!src/assets/fonts/**"
+    - "!package-lock.json"
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 3
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+      - "[skip review]"
+      - "[DRAFT]"
+    ignore_usernames:
+      - "dependabot[bot]"
+      - "github-actions[bot]"
+
+  path_instructions:
+    - path: "src/core/**/*.ts"
+      instructions: |
+        Prioritize behavioral correctness and regressions over style.
+        Check Bible-reference parsing boundaries, book/chapter/verse validation,
+        passage lookup behavior, PDF generation, error handling, and data integrity.
+        Flag changes that accidentally introduce network dependencies into local
+        Scripture lookup or expose sermon notes outside the user's device.
+
+    - path: "src/components/**/*.tsx"
+      instructions: |
+        Check semantic HTML, accessible names, keyboard interaction, focus behavior,
+        reduced-motion support, responsive behavior, and state ownership.
+        Components should have a focused responsibility and should not absorb domain
+        logic that belongs in src/core or a feature hook.
+
+    - path: "src/pages/**/*.tsx"
+      instructions: |
+        Pages should compose sections and features rather than own detailed domain
+        behavior. Flag duplicated business logic, inaccessible route transitions,
+        and accidental coupling between the marketing page and workspace.
+
+    - path: "src/features/workspace/**/*.ts"
+      instructions: |
+        Review async state transitions, stale state risks, reference validation,
+        passage refresh behavior, export failure handling, and preservation of user
+        edits. Require domain behavior to remain testable outside presentation code.
+
+    - path: "**/*.test.ts"
+      instructions: |
+        Check that tests cover observable behavior, malformed input, boundary cases,
+        failure paths, and regressions. Avoid requesting tests that merely duplicate
+        TypeScript, ESLint, or implementation details.
+
+    - path: ".github/workflows/**"
+      instructions: |
+        Check least-privilege permissions, pinned major action versions, dependency
+        installation reproducibility, and whether every required quality command is
+        executed before merge.
+
+chat:
+  auto_reply: true
