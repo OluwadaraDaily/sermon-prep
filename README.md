@@ -13,5 +13,11 @@ The app will:
 ## Local commands
 
 - `npm run dev`
+- `npm run check:local` (lint and typecheck)
 - `npm run test`
 - `npm run build`
+
+Running `npm install` sets up the Husky pre-commit hook. It runs the local checks
+before each commit. CI independently runs lint, typecheck, the test suite, and
+the production build. Configure the `Lint and typecheck` and `Test and build`
+checks as required status checks in the `main` branch protection rules.
