@@ -118,6 +118,7 @@ export function useWorkspace() {
               ...reference,
               raw: value,
               normalized: value,
+              occurrences: [],
               status: "needs-review" as const,
               issues: ["Edited reference has not been validated yet."],
             }
