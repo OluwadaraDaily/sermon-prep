@@ -156,10 +156,10 @@ em { color: var(--rose); font-style: italic; font-weight: 450; }
 }
 
 .notes-editor { position: relative; min-height: 445px; flex: 1; overflow: hidden; }
-.notes-editor textarea { position: relative; z-index: 1; height: 100%; background: transparent; color: transparent; caret-color: var(--ink); }
+.notes-editor textarea { position: relative; z-index: 1; height: 100%; background: transparent; color: var(--ink); caret-color: var(--ink); }
 .notes-editor textarea:placeholder-shown { color: var(--ink); }
-.notes-highlight-layer { position: absolute; z-index: 0; inset: 1px; overflow: hidden; padding: 15px; color: var(--ink); white-space: pre-wrap; overflow-wrap: break-word; font-size: .72rem; line-height: 1.65; pointer-events: none; }
-.notes-highlight { border-radius: 2px; background: rgba(201, 162, 39, .32); box-shadow: 0 0 0 2px rgba(201, 162, 39, .12); }
+.notes-highlight-layer { position: absolute; z-index: 0; inset: 1px; overflow: hidden; padding: 15px; color: transparent; white-space: pre-wrap; overflow-wrap: break-word; font-size: .72rem; line-height: 1.65; pointer-events: none; }
+.notes-highlight { color: transparent; border-radius: 2px; background: rgba(201, 162, 39, .32); box-shadow: 0 0 0 2px rgba(201, 162, 39, .12); }
 .reference-row.is-active { border-color: rgba(201, 162, 39, .72); background: rgba(201, 162, 39, .08); box-shadow: 0 0 0 3px rgba(201, 162, 39, .12); }
 
 @media (max-width: 760px) {
