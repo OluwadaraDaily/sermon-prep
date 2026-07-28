@@ -31,6 +31,7 @@ export function WorkspacePage() {
             onReferenceActivate={handleReferenceActivate}
             onReferenceDeactivate={handleReferenceDeactivate}
             onNotesChange={workspace.setNotes}
+            references={workspace.references}
             statusMessage={workspace.statusMessage}
           />
           <ReviewPane
