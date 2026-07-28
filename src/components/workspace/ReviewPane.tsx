@@ -5,12 +5,15 @@ import { ExportControls } from "./ExportControls";
 import { ReferenceRow } from "./ReferenceRow";
 
 interface ReviewPaneProps {
+  activeReferenceId: string | null;
   fileName: string;
   isDownloadingPdf: boolean;
   mode: PdfExportMode;
   onDownloadPdf: () => Promise<void>;
   onFileNameChange: (value: string) => void;
   onModeChange: (mode: PdfExportMode) => void;
+  onReferenceActivate: (id: string) => void;
+  onReferenceDeactivate: () => void;
   onReferenceRemove: (index: number) => void;
   onReferenceStatusChange: (index: number, status: ReferenceStatus) => void;
   onReferenceTextBlur: (index: number) => void;

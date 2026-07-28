@@ -1,8 +1,11 @@
 import { ArrowIcon } from "../common/Icons";
 
 interface NotesPaneProps {
+  activeReferenceId: string | null;
   notes: string;
   onFindPassages: () => Promise<void>;
+  onReferenceActivate: (id: string) => void;
+  onReferenceDeactivate: () => void;
   onNotesChange: (value: string) => void;
   statusMessage: string;
 }
