@@ -28,13 +28,13 @@ export function ReferenceRow({
   const isActive = activeReferenceId === reference.id;
 
   const handleOnBlur = (event: React.FocusEvent<HTMLElement>) => {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+    if (isActive && !event.currentTarget.contains(event.relatedTarget as Node | null)) {
       onReferenceDeactivate();
     }
   };
 
   const handleOnMouseLeave = (event: React.MouseEvent<HTMLElement>) => {
-    if (!event.currentTarget.contains(document.activeElement)) {
+    if (isActive && !event.currentTarget.contains(document.activeElement)) {
       onReferenceDeactivate();
     }
   };
