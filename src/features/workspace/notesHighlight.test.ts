@@ -32,4 +32,28 @@ describe("buildNotesSegments", () => {
       { text: notes, isHighlighted: false },
     ]);
   });
+
+  it("supports parser spans that include trailing whitespace", () => {
+    const notes = "Review 1 Corinthians ";
+    const references = parseBibleReferences(notes);
+
+    expect(buildNotesSegments(notes, references, references[0].id)).toEqual([
+      { text: "Review ", isHighlighted: false },
+      { text: "1 Corinthians", isHighlighted: true },
+      { text: " ", isHighlighted: false },
+    ]);
+  });
+
+  it("rejects a reference whose source range is outside the notes", () => {
+    const notes = "Read John 3:16.";
+    const [reference] = parseBibleReferences(notes);
+
+    expect(
+      buildNotesSegments(
+        notes,
+        [{ ...reference, sourceStart: -1 }],
+        reference.id,
+      ),
+    ).toEqual([{ text: notes, isHighlighted: false }]);
+  });
 });

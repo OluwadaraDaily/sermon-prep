@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { NotesPane } from "../components/workspace/NotesPane";
 import { ReviewPane } from "../components/workspace/ReviewPane";
@@ -10,12 +10,31 @@ export function WorkspacePage() {
   const workspace = useWorkspace();
   const [activeReferenceId, setActiveReferenceId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (
+      activeReferenceId &&
+      !workspace.references.some((reference) => reference.id === activeReferenceId)
+    ) {
+      setActiveReferenceId(null);
+    }
+  }, [activeReferenceId, workspace.references]);
+
   function handleReferenceActivate(id: string) {
     setActiveReferenceId(id);
   }
 
   function handleReferenceDeactivate() {
     setActiveReferenceId(null);
+  }
+
+  function handleNotesChange(value: string) {
+    handleReferenceDeactivate();
+    workspace.setNotes(value);
+  }
+
+  async function handleFindPassages() {
+    handleReferenceDeactivate();
+    await workspace.findPassages();
   }
 
   return (
@@ -27,10 +46,10 @@ export function WorkspacePage() {
           <NotesPane
             activeReferenceId={activeReferenceId}
             notes={workspace.notes}
-            onFindPassages={workspace.findPassages}
+            onFindPassages={handleFindPassages}
             onReferenceActivate={handleReferenceActivate}
             onReferenceDeactivate={handleReferenceDeactivate}
-            onNotesChange={workspace.setNotes}
+            onNotesChange={handleNotesChange}
             references={workspace.references}
             statusMessage={workspace.statusMessage}
           />
