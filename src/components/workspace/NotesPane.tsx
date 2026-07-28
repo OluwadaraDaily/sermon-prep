@@ -8,8 +8,6 @@ interface NotesPaneProps {
   activeReferenceId: string | null;
   notes: string;
   onFindPassages: () => Promise<void>;
-  onReferenceActivate: (id: string) => void;
-  onReferenceDeactivate: () => void;
   onNotesChange: (value: string) => void;
   references: BibleReference[];
   statusMessage: string;

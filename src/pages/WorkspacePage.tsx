@@ -47,8 +47,6 @@ export function WorkspacePage() {
             activeReferenceId={activeReferenceId}
             notes={workspace.notes}
             onFindPassages={handleFindPassages}
-            onReferenceActivate={handleReferenceActivate}
-            onReferenceDeactivate={handleReferenceDeactivate}
             onNotesChange={handleNotesChange}
             references={workspace.references}
             statusMessage={workspace.statusMessage}
