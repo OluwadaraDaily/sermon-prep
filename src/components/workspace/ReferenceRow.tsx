@@ -1,7 +1,10 @@
 import type { BibleReference, Passage, ReferenceStatus } from "../../core/bible/types";
 
 interface ReferenceRowProps {
+  activeReferenceId: string | null;
   index: number;
+  onReferenceActivate: (id: string) => void;
+  onReferenceDeactivate: () => void;
   onRemove: (index: number) => void;
   onStatusChange: (index: number, status: ReferenceStatus) => void;
   onTextBlur: (index: number) => void;
@@ -11,7 +14,10 @@ interface ReferenceRowProps {
 }
 
 export function ReferenceRow({
+  activeReferenceId,
   index,
+  onReferenceActivate,
+  onReferenceDeactivate,
   onRemove,
   onStatusChange,
   onTextBlur,
@@ -19,8 +25,29 @@ export function ReferenceRow({
   passage,
   reference,
 }: ReferenceRowProps) {
+  const isActive = activeReferenceId === reference.id;
+
+  const handleOnBlur = (event: React.FocusEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      onReferenceDeactivate();
+    }
+  };
+
+  const handleOnMouseLeave = (event: React.MouseEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(document.activeElement)) {
+      onReferenceDeactivate();
+    }
+  };
+
   return (
-    <article className="reference-row">
+    <article
+      aria-current={isActive ? "true" : undefined}
+      className={`reference-row${isActive ? " is-active" : ""}`}
+      onBlur={handleOnBlur}
+      onFocus={() => onReferenceActivate(reference.id)}
+      onMouseEnter={() => onReferenceActivate(reference.id)}
+      onMouseLeave={handleOnMouseLeave}
+    >
       <div className="reference-edit">
         <input
           aria-label={`Reference ${index + 1}`}

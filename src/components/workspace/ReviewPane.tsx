@@ -23,12 +23,15 @@ interface ReviewPaneProps {
 }
 
 export function ReviewPane({
+  activeReferenceId,
   fileName,
   isDownloadingPdf,
   mode,
   onDownloadPdf,
   onFileNameChange,
   onModeChange,
+  onReferenceActivate,
+  onReferenceDeactivate,
   onReferenceRemove,
   onReferenceStatusChange,
   onReferenceTextBlur,
@@ -64,8 +67,11 @@ export function ReviewPane({
         ) : (
           references.map((reference, index) => (
             <ReferenceRow
+              activeReferenceId={activeReferenceId}
               index={index}
               key={reference.id}
+              onReferenceActivate={onReferenceActivate}
+              onReferenceDeactivate={onReferenceDeactivate}
               onRemove={onReferenceRemove}
               onStatusChange={onReferenceStatusChange}
               onTextBlur={onReferenceTextBlur}
