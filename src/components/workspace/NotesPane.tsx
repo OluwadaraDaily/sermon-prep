@@ -32,7 +32,9 @@ export function NotesPane({
     const highlightLayer = highlightLayerRef.current;
     if (!textarea || !highlightLayer) return;
 
-    highlightLayer.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
+    highlightLayer.style.transform = "";
+    highlightLayer.scrollLeft = textarea.scrollLeft;
+    highlightLayer.scrollTop = textarea.scrollTop;
   }
 
   useEffect(() => {
