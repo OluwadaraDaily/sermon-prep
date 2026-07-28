@@ -1,11 +1,18 @@
 export type ReferenceStatus = "valid" | "needs-review" | "invalid";
 
+export type BibleReferenceOccurrence = {
+  raw: string;
+  sourceStart: number;
+  sourceEnd: number;
+};
+
 export type BibleReference = {
   id: string;
   raw: string;
   normalized: string;
   sourceStart: number;
   sourceEnd: number;
+  occurrences?: BibleReferenceOccurrence[];
   bookId: string;
   chapterStart: number;
   verseStart: number | null;

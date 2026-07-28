@@ -51,9 +51,32 @@ describe("buildNotesSegments", () => {
     expect(
       buildNotesSegments(
         notes,
-        [{ ...reference, sourceStart: -1 }],
+        [
+          {
+            ...reference,
+            occurrences: [
+              {
+                raw: reference.raw,
+                sourceStart: -1,
+                sourceEnd: reference.sourceEnd,
+              },
+            ],
+          },
+        ],
         reference.id,
       ),
     ).toEqual([{ text: notes, isHighlighted: false }]);
+  });
+
+  it("highlights every occurrence represented by one reference", () => {
+    const notes = "Romans 8:1 brings freedom. Later, Romans 8:1 brings hope.";
+    const references = parseBibleReferences(notes);
+
+    expect(buildNotesSegments(notes, references, references[0].id)).toEqual([
+      { text: "Romans 8:1", isHighlighted: true },
+      { text: " brings freedom. Later, ", isHighlighted: false },
+      { text: "Romans 8:1", isHighlighted: true },
+      { text: " brings hope.", isHighlighted: false },
+    ]);
   });
 });

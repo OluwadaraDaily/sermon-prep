@@ -1,6 +1,6 @@
 import { bibleBooks, normalizeBibleReference, validateBibleReference } from "../bible/catalog";
 
-import type { BibleBook, BibleReference } from "../bible/types";
+import type { BibleBook, BibleReference, BibleReferenceOccurrence } from "../bible/types";
 
 type AliasEntry = {
   book: BibleBook;
@@ -79,8 +79,8 @@ export function parseSingleBibleReference(source: string): BibleReference | null
 }
 
 export function deduplicateReferences(references: BibleReference[]): BibleReference[] {
-  const seen = new Set<string>();
   const deduped: BibleReference[] = [];
+  const indexes = new Map<string, number>();
 
   for (const reference of references) {
     const key = [
@@ -91,13 +91,31 @@ export function deduplicateReferences(references: BibleReference[]): BibleRefere
       reference.verseEnd ?? "",
     ].join("|");
 
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduped.push(reference);
+    const occurrences = reference.occurrences ?? [toOccurrence(reference)];
+    const existingIndex = indexes.get(key);
+
+    if (existingIndex === undefined) {
+      indexes.set(key, deduped.length);
+      deduped.push({ ...reference, occurrences });
+      continue;
     }
+
+    const existing = deduped[existingIndex];
+    deduped[existingIndex] = {
+      ...existing,
+      occurrences: [...(existing.occurrences ?? []), ...occurrences],
+    };
   }
 
   return deduped;
+}
+
+function toOccurrence(reference: BibleReference): BibleReferenceOccurrence {
+  return {
+    raw: reference.raw,
+    sourceStart: reference.sourceStart,
+    sourceEnd: reference.sourceEnd,
+  };
 }
 
 function parseSeries(source: string, offset: number, book: BibleBook, bookStart: number): { references: BibleReference[]; end: number } {
@@ -248,6 +266,7 @@ function toBibleReference(source: string, sourceStart: number, sourceEnd: number
     normalized: normalizeBibleReference(draft),
     sourceStart,
     sourceEnd,
+    occurrences: [{ raw: source.slice(sourceStart, sourceEnd).trim(), sourceStart, sourceEnd }],
     ...draft,
     confidence: status === "valid" ? span.confidence : Math.min(span.confidence, 0.72),
     status,
@@ -274,6 +293,7 @@ function parseBookOnlyReference(source: string, sourceStart: number, sourceEnd: 
     normalized: book.name,
     sourceStart,
     sourceEnd,
+    occurrences: [{ raw: source.slice(sourceStart, sourceEnd).trim(), sourceStart, sourceEnd }],
     ...draft,
     confidence: 0.55,
     status: "needs-review",

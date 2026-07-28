@@ -101,6 +101,17 @@ describe("parseBibleReferences", () => {
     expect(references[0].id).not.toBe(references[1].id);
   });
 
+  it("retains all source occurrences when deduplicating references", () => {
+    const source = "Romans 8:1 brings freedom. Later, Romans 8:1 brings hope.";
+    const references = parseBibleReferences(source);
+
+    expect(references).toHaveLength(1);
+    expect(references[0].occurrences?.map((occurrence) => source.slice(occurrence.sourceStart, occurrence.sourceEnd))).toEqual([
+      "Romans 8:1",
+      "Romans 8:1",
+    ]);
+  });
+
   it("preserves source positions and raw text", () => {
     const source = "Opening text: Gen. 1:1-3.";
     const [reference] = parseBibleReferences(source);
