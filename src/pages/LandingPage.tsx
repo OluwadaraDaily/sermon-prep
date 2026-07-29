@@ -8,7 +8,6 @@ import { HeroSection } from "../components/landing/HeroSection";
 import { HowItWorksSection } from "../components/landing/HowItWorksSection";
 import { SiteFooter } from "../components/landing/SiteFooter";
 import { SiteHeader } from "../components/landing/SiteHeader";
-import { TestimonialsSection } from "../components/landing/TestimonialsSection";
 import { TrustStrip } from "../components/landing/TrustStrip";
 import { useLandingAnimations } from "../hooks/useLandingAnimations";
 
@@ -24,7 +23,7 @@ export function LandingPage() {
         <HeroSection reduceMotion={reduceMotion} visualRef={heroVisualRef} />
         <TrustStrip />
         <FeaturesSection />
-        <TestimonialsSection />
+        {/* <TestimonialsSection /> */}
         <HowItWorksSection />
         <EarlyAccessSection />
         <FaqSection />
