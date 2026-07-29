@@ -40,7 +40,13 @@ Known examples were present:
 - `Romans 4:3 → Genesis 15:6` — 34 votes.
 - `Hebrews 1:5 → Psalm 2:7` — 71 votes.
 
-The archive size was approximately 1.9 MB compressed and 8.3 MB uncompressed, making offline bundling technically practical. The full dataset is not bundled in this step because the first task is source validation only.
+The archive size was approximately 1.9 MB compressed and 8.3 MB uncompressed, making offline bundling technically practical. Step 2 generates a 14.3 MB local normalized dataset at data/cross-references/openbible.json.
+
+The generated dataset contains one lookup entry per canonical source verse, related target references sorted by signed vote score, and source attribution metadata. Regenerate it from a newer archive with:
+
+node scripts/validate-openbible-cross-references.mjs /path/to/cross-references.zip --output data/cross-references/openbible.json
+
+The dataset is local but is not connected to the application UI yet; that is the following step.
 
 ## Attribution
 

@@ -1,16 +1,24 @@
 /* global console, process, URL */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname } from "node:path";
 
 const defaultArchivePath = "/tmp/sermon-prep-openbible-cross-references.zip";
-const archivePath =
-  process.argv.find(
-    (argument) =>
-      !argument.startsWith("--") &&
-      argument !== process.argv[0] &&
-      argument !== process.argv[1],
-  ) ?? defaultArchivePath;
+const outputArgumentIndex = process.argv.indexOf("--output");
+const outputPath =
+  outputArgumentIndex === -1 ? null : process.argv[outputArgumentIndex + 1];
+if (outputArgumentIndex !== -1 && (!outputPath || outputPath.startsWith("--"))) {
+  throw new Error("--output requires a destination path.");
+}
+const positionalArguments = process.argv
+  .slice(2)
+  .filter(
+    (argument, index, argumentsList) =>
+      !argument.startsWith("--") && argumentsList[index - 1] !== "--output",
+  );
+const archivePath = positionalArguments[0] ?? defaultArchivePath;
 const jsonOutput = process.argv.includes("--json");
 const books = JSON.parse(
   readFileSync(new URL("../data/bibles/web/books.json", import.meta.url), "utf8"),
@@ -136,7 +144,9 @@ function referenceKey(reference) {
 }
 
 function targetKey(target) {
-  return `${target.bookId}.${target.chapter}.${target.verseStart}-${target.chapterEnd}.${target.verseEnd}`;
+  const start = `${target.bookId}.${target.chapter}.${target.verseStart}`;
+  const end = `${target.bookId}.${target.chapterEnd}.${target.verseEnd}`;
+  return start === end ? start : `${start}-${end}`;
 }
 
 function matchesTarget(target, expected) {
@@ -263,6 +273,48 @@ function buildReport(sourcePath, sourceText, records, errors) {
   };
 }
 
+function buildNormalizedDataset(sourcePath, sourceText, header, records, errors) {
+  const groupedReferences = new Map();
+  for (const record of records) {
+    const sourceKey = referenceKey(record.source);
+    const entries = groupedReferences.get(sourceKey) ?? [];
+    entries.push({ target: targetKey(record.target), score: record.score });
+    groupedReferences.set(sourceKey, entries);
+  }
+
+  const references = Object.fromEntries(
+    [...groupedReferences.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([source, entries]) => [
+        source,
+        entries.sort(
+          (left, right) =>
+            right.score - left.score || left.target.localeCompare(right.target),
+        ),
+      ]),
+  );
+  const sourceBytes = readFileSync(sourcePath);
+  const archiveDate = /CC-BY\s+(\d{4}-\d{2}-\d{2})/.exec(header)?.[1] ?? null;
+  const sourceDataRowCount = sourceText.split(/\r?\n/).filter(Boolean).length - 1;
+
+  return {
+    schemaVersion: 1,
+    metadata: {
+      sourceName: "openbible",
+      relationship: "related",
+      sourceUrl: "https://www.openbible.info/labs/cross-references/",
+      license: "CC BY",
+      archiveDate,
+      archiveName: basename(sourcePath),
+      archiveSha256: createHash("sha256").update(sourceBytes).digest("hex"),
+      sourceDataRowCount,
+      includedRecordCount: records.length,
+      excludedRecordCount: errors.length,
+    },
+    references,
+  };
+}
+
 function renderMarkdown(report) {
   const exampleLines = report.examples.map((example) => {
     const matchingVotes =
@@ -343,4 +395,15 @@ for (const [index, line] of lines.entries()) {
 }
 
 const report = buildReport(archivePath, sourceText, records, errors);
+if (outputPath) {
+  const dataset = buildNormalizedDataset(
+    archivePath,
+    sourceText,
+    header ?? "",
+    records,
+    errors,
+  );
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, `${JSON.stringify(dataset)}\n`);
+}
 console.log(jsonOutput ? JSON.stringify(report, null, 2) : renderMarkdown(report));

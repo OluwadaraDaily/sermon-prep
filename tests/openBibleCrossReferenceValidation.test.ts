@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -22,6 +24,18 @@ type ValidationReport = {
     normalizedRecordCount: number;
     targetRangeCount: number;
   };
+};
+
+type NormalizedDataset = {
+  metadata: {
+    archiveDate: string;
+    excludedRecordCount: number;
+    includedRecordCount: number;
+    license: string;
+    relationship: string;
+  };
+  references: Record<string, Array<{ score: number; target: string }>>;
+  schemaVersion: number;
 };
 
 function runValidator(): ValidationReport {
@@ -72,5 +86,42 @@ describe("OpenBible cross-reference validation prototype", () => {
       { label: "Romans 4:3 to Genesis 15:6", status: "present" },
       { label: "Hebrews 1:5 to Psalm 2:7", status: "present" },
     ]);
+  });
+
+  it("writes a source-indexed dataset with attribution metadata", () => {
+    const outputDirectory = mkdtempSync(join(tmpdir(), "sermon-prep-openbible-import-"));
+    const outputPath = join(outputDirectory, "openbible.json");
+    const scriptPath = resolve(
+      process.cwd(),
+      "scripts/validate-openbible-cross-references.mjs",
+    );
+    const fixturePath = resolve(
+      process.cwd(),
+      "tests/fixtures/openbible-cross-references.sample.txt",
+    );
+
+    try {
+      execFileSync(process.execPath, [scriptPath, fixturePath, "--output", outputPath]);
+      const dataset = JSON.parse(readFileSync(outputPath, "utf8")) as NormalizedDataset;
+
+      expect(dataset.schemaVersion).toBe(1);
+      expect(dataset.metadata).toMatchObject({
+        archiveDate: "2026-07-27",
+        excludedRecordCount: 2,
+        includedRecordCount: 5,
+        license: "CC BY",
+        relationship: "related",
+      });
+      expect(dataset.references["matthew.4.4"][0]).toEqual({
+        target: "deuteronomy.8.3",
+        score: 389,
+      });
+      expect(dataset.references["genesis.1.1"]).toEqual([
+        { target: "colossians.1.16-colossians.1.17", score: 167 },
+        { target: "psalms.33.6", score: -2 },
+      ]);
+    } finally {
+      rmSync(outputDirectory, { force: true, recursive: true });
+    }
   });
 });
