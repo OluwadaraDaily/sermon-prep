@@ -161,6 +161,11 @@ em { color: var(--rose); font-style: italic; font-weight: 450; }
 .notes-highlight-layer { position: absolute; z-index: 0; inset: 1px; overflow: hidden; padding: 15px; color: transparent; white-space: pre-wrap; overflow-wrap: break-word; font-size: .72rem; line-height: 1.65; pointer-events: none; }
 .notes-highlight { color: transparent; border-radius: 2px; background: rgba(201, 162, 39, .32); box-shadow: 0 0 0 2px rgba(201, 162, 39, .12); }
 .reference-row.is-active { border-color: rgba(201, 162, 39, .72); background: rgba(201, 162, 39, .08); box-shadow: 0 0 0 3px rgba(201, 162, 39, .12); }
+.related-passages { margin-top: 14px; padding-top: 11px; border-top: 1px solid #e4ddd3; }
+.related-passages h3 { margin: 0 0 7px; color: var(--sage); font-size: .59rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.related-passages ul { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.related-passages li { padding: 5px 7px; border: 1px solid #d8dfd2; border-radius: 999px; color: #53634c; background: #f0f4ed; font-size: .61rem; }
+.related-passages p { margin: 7px 0 0; color: #a0978c; font-size: .56rem; }
 
 @media (max-width: 760px) {
   .notes-editor { min-height: 370px; }

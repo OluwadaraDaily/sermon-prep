@@ -1,4 +1,9 @@
-import type { BibleReference, Passage, ReferenceStatus } from "../../core/bible/types";
+import type {
+  BibleReference,
+  Passage,
+  ReferenceStatus,
+  RelatedPassage,
+} from "../../core/bible/types";
 import type { PdfExportMode } from "../../core/export/pdf";
 import { referenceKey } from "../../features/workspace/workspaceUtils";
 import { ExportControls } from "./ExportControls";
@@ -19,6 +24,7 @@ interface ReviewPaneProps {
   onReferenceTextBlur: (index: number) => void;
   onReferenceTextChange: (index: number, value: string) => void;
   passages: Record<string, Passage>;
+  relatedPassages: Record<string, RelatedPassage[]>;
   references: BibleReference[];
 }
 
@@ -37,6 +43,7 @@ export function ReviewPane({
   onReferenceTextBlur,
   onReferenceTextChange,
   passages,
+  relatedPassages,
   references,
 }: ReviewPaneProps) {
   return (
@@ -77,6 +84,7 @@ export function ReviewPane({
               onTextBlur={onReferenceTextBlur}
               onTextChange={onReferenceTextChange}
               passage={passages[referenceKey(reference)]}
+              relatedPassages={relatedPassages[referenceKey(reference)] ?? []}
               reference={reference}
             />
           ))

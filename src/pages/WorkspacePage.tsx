@@ -66,6 +66,7 @@ export function WorkspacePage() {
             onReferenceTextBlur={workspace.validateReferenceText}
             onReferenceTextChange={workspace.changeReferenceText}
             passages={workspace.passages}
+            relatedPassages={workspace.relatedPassages}
             references={workspace.references}
           />
         </div>
