@@ -1,4 +1,4 @@
-import type { BibleReference, Passage } from "../../core/bible/types";
+import type { BibleReference, Passage, RelatedPassage } from "../../core/bible/types";
 
 export function referenceKey(reference: BibleReference): string {
   return [
@@ -8,6 +8,34 @@ export function referenceKey(reference: BibleReference): string {
     reference.chapterEnd,
     reference.verseEnd ?? "",
   ].join("|");
+}
+
+export function relatedPassageKey(passage: RelatedPassage): string {
+  return [
+    passage.bookId,
+    passage.chapterStart,
+    passage.verseStart,
+    passage.chapterEnd,
+    passage.verseEnd,
+  ].join("|");
+}
+
+export function relatedPassageToReference(passage: RelatedPassage): BibleReference {
+  return {
+    id: `related-${relatedPassageKey(passage)}`,
+    raw: passage.normalized,
+    normalized: passage.normalized,
+    sourceStart: 0,
+    sourceEnd: passage.normalized.length,
+    bookId: passage.bookId,
+    chapterStart: passage.chapterStart,
+    verseStart: passage.verseStart,
+    chapterEnd: passage.chapterEnd,
+    verseEnd: passage.verseEnd,
+    confidence: 1,
+    status: "valid",
+    issues: [],
+  };
 }
 
 export function toPdfFileName(value: string): string {

@@ -13,9 +13,20 @@ import {
   parseBibleReferences,
   parseSingleBibleReference,
 } from "../../core/references/parser";
-import { isPassage, referenceKey, toPdfFileName } from "./workspaceUtils";
+import {
+  isPassage,
+  referenceKey,
+  relatedPassageKey,
+  relatedPassageToReference,
+  toPdfFileName,
+} from "./workspaceUtils";
 
 const initialStatusMessage = "Paste notes to find Bible references.";
+
+export type RelatedPassagePreview = {
+  passage?: Passage;
+  status: "error" | "idle" | "loading" | "loaded";
+};
 
 export function useWorkspace() {
   const [notes, setNotes] = useState("");
@@ -24,12 +35,17 @@ export function useWorkspace() {
   const [relatedPassages, setRelatedPassages] = useState<
     Record<string, RelatedPassage[]>
   >({});
+  const [relatedPassagePreviews, setRelatedPassagePreviews] = useState<
+    Record<string, RelatedPassagePreview>
+  >({});
   const [mode, setMode] = useState<PdfExportMode>("references-and-text");
   const [fileName, setFileName] = useState("sermon-passages");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [statusMessage, setStatusMessage] = useState(initialStatusMessage);
   const refreshGeneration = useRef(0);
   const editedReferenceIds = useRef(new Set<string>());
+  const relatedPassageCache = useRef(new Map<string, Passage>());
+  const relatedPassageRequests = useRef(new Map<string, Promise<Passage | null>>());
 
   const approvedPassages = useMemo(
     () =>
@@ -112,6 +128,49 @@ export function useWorkspace() {
       .catch(() => {
         // Related passages are supplemental; a failed local data chunk must not hide the Bible text.
       });
+  }
+
+  function loadRelatedPassage(relatedPassage: RelatedPassage) {
+    const key = relatedPassageKey(relatedPassage);
+    const cachedPassage = relatedPassageCache.current.get(key);
+    if (cachedPassage) {
+      setRelatedPassagePreviews((current) => ({
+        ...current,
+        [key]: { passage: cachedPassage, status: "loaded" },
+      }));
+      return;
+    }
+
+    const existingRequest = relatedPassageRequests.current.get(key);
+    if (existingRequest) return;
+
+    setRelatedPassagePreviews((current) => ({
+      ...current,
+      [key]: { status: "loading" },
+    }));
+
+    const request = localWebProvider
+      .getPassage("web", relatedPassageToReference(relatedPassage))
+      .then((passage) => {
+        relatedPassageCache.current.set(key, passage);
+        setRelatedPassagePreviews((current) => ({
+          ...current,
+          [key]: { passage, status: "loaded" },
+        }));
+        return passage;
+      })
+      .catch(() => {
+        setRelatedPassagePreviews((current) => ({
+          ...current,
+          [key]: { status: "error" },
+        }));
+        return null;
+      })
+      .finally(() => {
+        relatedPassageRequests.current.delete(key);
+      });
+
+    relatedPassageRequests.current.set(key, request);
   }
 
   async function findPassages() {
@@ -238,6 +297,7 @@ export function useWorkspace() {
     references,
     passages,
     relatedPassages,
+    relatedPassagePreviews,
     mode,
     setMode,
     fileName,
@@ -245,6 +305,7 @@ export function useWorkspace() {
     isDownloadingPdf,
     statusMessage,
     findPassages,
+    loadRelatedPassage,
     changeReferenceText,
     validateReferenceText,
     changeReferenceStatus,

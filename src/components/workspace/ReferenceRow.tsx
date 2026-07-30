@@ -4,6 +4,8 @@ import type {
   ReferenceStatus,
   RelatedPassage,
 } from "../../core/bible/types";
+import type { RelatedPassagePreview } from "../../features/workspace/useWorkspace";
+import { relatedPassageKey } from "../../features/workspace/workspaceUtils";
 
 interface ReferenceRowProps {
   activeReferenceId: string | null;
@@ -14,16 +16,22 @@ interface ReferenceRowProps {
   onStatusChange: (index: number, status: ReferenceStatus) => void;
   onTextBlur: (index: number) => void;
   onTextChange: (index: number, value: string) => void;
+  onRelatedPassageHover: (passage: RelatedPassage) => void;
   passage?: Passage;
+  relatedPassagePreviews: Record<string, RelatedPassagePreview>;
   relatedPassages: RelatedPassage[];
   reference: BibleReference;
 }
 
 function RelatedPassages({
+  onPassageHover,
   passages,
+  previews,
   referenceId,
 }: {
+  onPassageHover: (passage: RelatedPassage) => void;
   passages: RelatedPassage[];
+  previews: Record<string, RelatedPassagePreview>;
   referenceId: string;
 }) {
   return (
@@ -31,7 +39,15 @@ function RelatedPassages({
       <h3 id={`related-${referenceId}`}>Related passages</h3>
       <ul>
         {passages.map((passage) => (
-          <li key={passage.normalized}>{passage.normalized}</li>
+          <li key={passage.normalized}>
+            <button
+              data-preview-state={previews[relatedPassageKey(passage)]?.status ?? "idle"}
+              type="button"
+              onMouseEnter={() => onPassageHover(passage)}
+            >
+              {passage.normalized}
+            </button>
+          </li>
         ))}
       </ul>
       <p>Ranked from the local OpenBible cross-reference data.</p>
@@ -48,8 +64,10 @@ export function ReferenceRow({
   onStatusChange,
   onTextBlur,
   onTextChange,
+  onRelatedPassageHover,
   passage,
   relatedPassages,
+  relatedPassagePreviews,
   reference,
 }: ReferenceRowProps) {
   const isActive = activeReferenceId === reference.id;
@@ -109,7 +127,12 @@ export function ReferenceRow({
       ) : null}
       {passage ? <PassagePreview passage={passage} /> : null}
       {relatedPassages.length > 0 ? (
-        <RelatedPassages passages={relatedPassages} referenceId={reference.id} />
+        <RelatedPassages
+          onPassageHover={onRelatedPassageHover}
+          passages={relatedPassages}
+          previews={relatedPassagePreviews}
+          referenceId={reference.id}
+        />
       ) : null}
     </article>
   );
