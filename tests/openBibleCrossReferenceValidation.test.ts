@@ -56,6 +56,17 @@ function runValidator(
   return JSON.parse(output) as ValidationReport;
 }
 
+function runValidatorMarkdown(fixtureName: string): string {
+  const scriptPath = resolve(
+    process.cwd(),
+    "scripts/validate-openbible-cross-references.mjs",
+  );
+  const fixturePath = resolve(process.cwd(), "tests/fixtures", fixtureName);
+  return execFileSync(process.execPath, [scriptPath, fixturePath], {
+    encoding: "utf8",
+  });
+}
+
 describe("OpenBible cross-reference validation prototype", () => {
   it("normalizes known links, ranges, and signed vote scores", () => {
     const report = runValidator();
@@ -109,6 +120,16 @@ describe("OpenBible cross-reference validation prototype", () => {
       },
     ]);
     expect(report.records.invalidRecordCount).toBe(0);
+  });
+
+  it("renders structural errors before catalog coverage in Markdown output", () => {
+    const output = runValidatorMarkdown("openbible-cross-references.bad-header.txt");
+    const structuralErrorsIndex = output.indexOf("## Structural errors");
+    const catalogCoverageIndex = output.indexOf("## Catalog coverage");
+
+    expect(structuralErrorsIndex).toBeGreaterThanOrEqual(0);
+    expect(structuralErrorsIndex).toBeLessThan(catalogCoverageIndex);
+    expect(output).toContain("- line 1: Unexpected header: Not the OpenBible header.");
   });
 
   it("writes a source-indexed dataset with attribution metadata", () => {

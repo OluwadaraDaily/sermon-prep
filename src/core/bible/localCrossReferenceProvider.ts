@@ -11,6 +11,7 @@ type CrossReferenceDataset = {
 const dataset = crossReferenceJson as CrossReferenceDataset;
 export const localCrossReferenceProvider = {
   async getRelatedPassages(passage: Passage, limit = 5): Promise<RelatedPassage[]> {
+    const normalizedLimit = Math.max(0, limit);
     const relatedByKey = new Map<string, RelatedPassage>();
     for (const verse of passage.verses) {
       const sourceKey = `${verse.bookId}.${verse.chapter}.${verse.verse}`;
@@ -31,7 +32,7 @@ export const localCrossReferenceProvider = {
         (left, right) =>
           right.score - left.score || left.normalized.localeCompare(right.normalized),
       )
-      .slice(0, limit);
+      .slice(0, normalizedLimit);
   },
 };
 function parseRelatedPassage(target: string, score: number): RelatedPassage | null {
