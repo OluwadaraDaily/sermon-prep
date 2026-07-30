@@ -1,7 +1,13 @@
 import { useMemo, useRef, useState } from "react";
 
-import type { BibleReference, Passage, ReferenceStatus } from "../../core/bible/types";
+import type {
+  BibleReference,
+  Passage,
+  ReferenceStatus,
+  RelatedPassage,
+} from "../../core/bible/types";
 import { buildPassagePdf, downloadPdf, type PdfExportMode } from "../../core/export/pdf";
+import { localCrossReferenceProvider } from "../../core/bible/localCrossReferenceProvider";
 import { localWebProvider } from "../../core/provider/localWebProvider";
 import {
   parseBibleReferences,
@@ -15,6 +21,9 @@ export function useWorkspace() {
   const [notes, setNotes] = useState("");
   const [references, setReferences] = useState<BibleReference[]>([]);
   const [passages, setPassages] = useState<Record<string, Passage>>({});
+  const [relatedPassages, setRelatedPassages] = useState<
+    Record<string, RelatedPassage[]>
+  >({});
   const [mode, setMode] = useState<PdfExportMode>("references-and-text");
   const [fileName, setFileName] = useState("sermon-passages");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -35,27 +44,40 @@ export function useWorkspace() {
     const requestGeneration = refreshGeneration.current + 1;
     refreshGeneration.current = requestGeneration;
     const nextPassages: Record<string, Passage> = {};
-
-    const results = await Promise.allSettled(
-      nextReferences
-        .filter((reference) => reference.status === "valid")
-        .map(async (reference) => ({
-          key: referenceKey(reference),
-          passage: await localWebProvider.getPassage("web", reference),
-        })),
+    const validReferences = nextReferences.filter(
+      (reference) => reference.status === "valid",
     );
 
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        nextPassages[result.value.key] = result.value.passage;
-      }
+    if (requestGeneration === refreshGeneration.current) {
+      setPassages({});
+      setRelatedPassages({});
     }
+
+    const results = await Promise.allSettled(
+      validReferences.map(async (reference) => {
+        const passage = await localWebProvider.getPassage("web", reference);
+        const key = referenceKey(reference);
+        nextPassages[key] = passage;
+
+        if (requestGeneration === refreshGeneration.current) {
+          setPassages((currentPassages) => ({
+            ...currentPassages,
+            [key]: passage,
+          }));
+          void refreshRelatedPassages(key, passage, requestGeneration);
+        }
+
+        return {
+          key,
+          passage,
+        };
+      }),
+    );
 
     const failedCount = results.filter((result) => result.status === "rejected").length;
     const isCurrent = requestGeneration === refreshGeneration.current;
 
     if (isCurrent) {
-      setPassages(nextPassages);
       if (failedCount > 0) {
         setStatusMessage(
           failedCount === 1
@@ -65,7 +87,31 @@ export function useWorkspace() {
       }
     }
 
-    return { failedCount, isCurrent, passages: nextPassages };
+    return {
+      failedCount,
+      isCurrent,
+      passages: nextPassages,
+      relatedPassages: {},
+    };
+  }
+
+  function refreshRelatedPassages(
+    key: string,
+    passage: Passage,
+    requestGeneration: number,
+  ) {
+    void localCrossReferenceProvider
+      .getRelatedPassages(passage)
+      .then((relatedPassages) => {
+        if (requestGeneration !== refreshGeneration.current) return;
+        setRelatedPassages((currentRelatedPassages) => ({
+          ...currentRelatedPassages,
+          [key]: relatedPassages,
+        }));
+      })
+      .catch(() => {
+        // Related passages are supplemental; a failed local data chunk must not hide the Bible text.
+      });
   }
 
   async function findPassages() {
@@ -110,6 +156,11 @@ export function useWorkspace() {
       const nextPassages = { ...currentPassages };
       delete nextPassages[referenceKey(currentReference)];
       return nextPassages;
+    });
+    setRelatedPassages((currentRelatedPassages) => {
+      const nextRelatedPassages = { ...currentRelatedPassages };
+      delete nextRelatedPassages[referenceKey(currentReference)];
+      return nextRelatedPassages;
     });
     setReferences((currentReferences) =>
       currentReferences.map((reference, referenceIndex) =>
@@ -186,6 +237,7 @@ export function useWorkspace() {
     setNotes,
     references,
     passages,
+    relatedPassages,
     mode,
     setMode,
     fileName,

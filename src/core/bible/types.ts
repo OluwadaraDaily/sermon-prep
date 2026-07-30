@@ -63,6 +63,16 @@ export type Passage = {
   verses: PassageVerse[];
 };
 
+export type RelatedPassage = {
+  bookId: string;
+  chapterStart: number;
+  verseStart: number;
+  chapterEnd: number;
+  verseEnd: number;
+  normalized: string;
+  score: number;
+};
+
 export interface BibleProvider {
   listVersions(): Promise<BibleVersion[]>;
   validate(reference: BibleReference): Promise<ValidationResult>;

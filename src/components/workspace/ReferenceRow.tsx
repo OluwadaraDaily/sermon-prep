@@ -1,4 +1,9 @@
-import type { BibleReference, Passage, ReferenceStatus } from "../../core/bible/types";
+import type {
+  BibleReference,
+  Passage,
+  ReferenceStatus,
+  RelatedPassage,
+} from "../../core/bible/types";
 
 interface ReferenceRowProps {
   activeReferenceId: string | null;
@@ -10,7 +15,28 @@ interface ReferenceRowProps {
   onTextBlur: (index: number) => void;
   onTextChange: (index: number, value: string) => void;
   passage?: Passage;
+  relatedPassages: RelatedPassage[];
   reference: BibleReference;
+}
+
+function RelatedPassages({
+  passages,
+  referenceId,
+}: {
+  passages: RelatedPassage[];
+  referenceId: string;
+}) {
+  return (
+    <section className="related-passages" aria-labelledby={`related-${referenceId}`}>
+      <h3 id={`related-${referenceId}`}>Related passages</h3>
+      <ul>
+        {passages.map((passage) => (
+          <li key={passage.normalized}>{passage.normalized}</li>
+        ))}
+      </ul>
+      <p>Ranked from the local OpenBible cross-reference data.</p>
+    </section>
+  );
 }
 
 export function ReferenceRow({
@@ -23,6 +49,7 @@ export function ReferenceRow({
   onTextBlur,
   onTextChange,
   passage,
+  relatedPassages,
   reference,
 }: ReferenceRowProps) {
   const isActive = activeReferenceId === reference.id;
@@ -81,6 +108,9 @@ export function ReferenceRow({
         <p className="issue-line">{reference.issues.join(" ")}</p>
       ) : null}
       {passage ? <PassagePreview passage={passage} /> : null}
+      {relatedPassages.length > 0 ? (
+        <RelatedPassages passages={relatedPassages} referenceId={reference.id} />
+      ) : null}
     </article>
   );
 }
