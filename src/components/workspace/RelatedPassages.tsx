@@ -78,7 +78,7 @@ function RelatedPassageItem({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [isOpen]);
+  }, [isOpen, preview?.status]);
 
   const tooltipStyle = tooltipPosition
     ? ({
