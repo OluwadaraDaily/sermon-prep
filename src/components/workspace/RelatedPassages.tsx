@@ -34,7 +34,7 @@ export function RelatedPassages({
           />
         ))}
       </ul>
-      <p>Ranked from the local OpenBible cross-reference data.</p>
+      <p>Ranked from the OpenBible cross-reference data.</p>
     </section>
   );
 }
