@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 import type {
   BibleReference,
   Passage,
@@ -5,6 +7,7 @@ import type {
   RelatedPassage,
 } from "../../core/bible/types";
 import type { RelatedPassagePreview } from "../../features/workspace/useWorkspace";
+import { useHoverFocusDisclosure } from "../../features/workspace/useHoverFocusDisclosure";
 import { relatedPassageKey } from "../../features/workspace/workspaceUtils";
 
 interface ReferenceRowProps {
@@ -39,19 +42,72 @@ function RelatedPassages({
       <h3 id={`related-${referenceId}`}>Related passages</h3>
       <ul>
         {passages.map((passage) => (
-          <li key={passage.normalized}>
-            <button
-              data-preview-state={previews[relatedPassageKey(passage)]?.status ?? "idle"}
-              type="button"
-              onMouseEnter={() => onPassageHover(passage)}
-            >
-              {passage.normalized}
-            </button>
-          </li>
+          <RelatedPassageItem
+            key={passage.normalized}
+            onPassageHover={onPassageHover}
+            passage={passage}
+            preview={previews[relatedPassageKey(passage)]}
+          />
         ))}
       </ul>
       <p>Ranked from the local OpenBible cross-reference data.</p>
     </section>
+  );
+}
+
+function RelatedPassageItem({
+  onPassageHover,
+  passage,
+  preview,
+}: {
+  onPassageHover: (passage: RelatedPassage) => void;
+  passage: RelatedPassage;
+  preview?: RelatedPassagePreview;
+}) {
+  const { disclosureHandlers, isOpen } = useHoverFocusDisclosure();
+  const tooltipId = useId();
+
+  function handleActivate() {
+    onPassageHover(passage);
+  }
+
+  return (
+    <li className="related-passage-item" {...disclosureHandlers}>
+      <button
+        aria-controls={tooltipId}
+        aria-expanded={isOpen}
+        aria-label={`Preview ${passage.normalized}`}
+        className="related-passage-trigger"
+        data-preview-state={preview?.status ?? "idle"}
+        type="button"
+        onFocus={handleActivate}
+        onMouseEnter={handleActivate}
+      >
+        {passage.normalized}
+      </button>
+      {isOpen ? (
+        <div className="related-passage-tooltip" id={tooltipId} role="tooltip">
+          <strong>{passage.normalized}</strong>
+          {preview?.status === "loading" || !preview ? (
+            <p>Loading passage…</p>
+          ) : preview.status === "error" ? (
+            <p>Could not load this local passage.</p>
+          ) : (
+            <blockquote>
+              {preview.passage?.verses.map((verse) => (
+                <p key={`${verse.chapter}-${verse.verse}`}>
+                  <sup>
+                    {verse.chapter}:{verse.verse}
+                  </sup>{" "}
+                  {verse.text}
+                </p>
+              ))}
+            </blockquote>
+          )}
+          <small>{preview?.passage?.versionName ?? "World English Bible"}</small>
+        </div>
+      ) : null}
+    </li>
   );
 }
 

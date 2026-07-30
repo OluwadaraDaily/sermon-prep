@@ -164,7 +164,18 @@ em { color: var(--rose); font-style: italic; font-weight: 450; }
 .related-passages { margin-top: 14px; padding-top: 11px; border-top: 1px solid #e4ddd3; }
 .related-passages h3 { margin: 0 0 7px; color: var(--sage); font-size: .59rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .related-passages ul { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; padding: 0; list-style: none; }
-.related-passages li { padding: 5px 7px; border: 1px solid #d8dfd2; border-radius: 999px; color: #53634c; background: #f0f4ed; font-size: .61rem; }
+.related-passages li { position: relative; }
+.related-passage-trigger { padding: 5px 7px; border: 1px solid #d8dfd2; border-radius: 999px; color: #53634c; background: #f0f4ed; font: inherit; font-size: .61rem; cursor: pointer; }
+.related-passage-trigger:hover, .related-passage-trigger:focus-visible, .related-passage-trigger[aria-expanded="true"] { border-color: var(--sage); color: var(--ink); outline: none; }
+.related-passage-tooltip { position: absolute; z-index: 10; bottom: calc(100% + 10px); left: 0; width: min(330px, calc(100vw - 70px)); padding: 14px; border: 1px solid #cfc6b8; border-radius: 8px; color: var(--ink); background: #fffdfa; box-shadow: 0 14px 30px rgba(51, 42, 32, .16); font-size: .65rem; pointer-events: auto; }
+.related-passage-tooltip::after { position: absolute; bottom: -7px; left: 18px; width: 12px; height: 12px; border-right: 1px solid #cfc6b8; border-bottom: 1px solid #cfc6b8; background: #fffdfa; content: ""; transform: rotate(45deg); }
+.related-passage-tooltip strong { display: block; margin-bottom: 8px; color: var(--sage); font-size: .68rem; }
+.related-passage-tooltip blockquote { max-height: 190px; margin: 0; overflow: auto; padding-left: 10px; font-size: .66rem; }
+.related-passage-tooltip blockquote p { margin: 0 0 7px; line-height: 1.5; }
+.related-passage-tooltip blockquote p:last-child { margin-bottom: 0; }
+.related-passage-tooltip blockquote sup { color: var(--rose); font-family: "Sermon Manrope", sans-serif; font-size: .52rem; font-weight: 800; }
+.related-passage-tooltip > p { margin: 0; color: #70675d; line-height: 1.5; }
+.related-passage-tooltip small { display: block; margin-top: 10px; color: #9d9287; font-size: .5rem; text-transform: uppercase; }
 .related-passages p { margin: 7px 0 0; color: #70675d; font-size: .56rem; }
 
 @media (max-width: 760px) {
