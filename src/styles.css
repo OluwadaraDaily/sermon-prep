@@ -166,7 +166,8 @@ em { color: var(--rose); font-style: italic; font-weight: 450; }
 .related-passages ul { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; padding: 0; list-style: none; }
 .related-passages li { position: relative; }
 .related-passage-trigger { padding: 5px 7px; border: 1px solid #d8dfd2; border-radius: 999px; color: #53634c; background: #f0f4ed; font: inherit; font-size: .61rem; cursor: pointer; }
-.related-passage-trigger:hover, .related-passage-trigger:focus-visible, .related-passage-trigger[aria-expanded="true"] { border-color: var(--sage); color: var(--ink); outline: none; }
+.related-passage-trigger:hover, .related-passage-trigger[data-preview-open="true"] { border-color: var(--sage); color: var(--ink); }
+.related-passage-trigger:focus-visible { border-color: var(--sage); color: var(--ink); outline: 2px solid var(--sage); outline-offset: 2px; }
 .related-passage-tooltip { position: fixed; z-index: 1000; width: min(330px, calc(100vw - 32px)); max-height: min(280px, calc(100vh - 110px)); padding: 14px; border: 1px solid #cfc6b8; border-radius: 8px; color: var(--ink); background: #fffdfa; box-shadow: 0 14px 30px rgba(51, 42, 32, .16); font-size: .65rem; pointer-events: auto; overflow: auto; }
 .related-passage-tooltip::after { position: absolute; width: 12px; height: 12px; border: 1px solid #cfc6b8; background: #fffdfa; content: ""; transform: rotate(45deg); }
 .related-passage-tooltip[data-placement="top"]::after { bottom: -7px; left: var(--tooltip-tail-offset); border-top: 0; border-left: 0; }

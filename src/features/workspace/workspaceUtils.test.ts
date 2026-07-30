@@ -44,4 +44,17 @@ describe("related passage workspace utilities", () => {
     expect(passage.verses.map((verse) => verse.verse)).toEqual([16, 17]);
     expect(passage.verses[0]?.text).toContain("For God so loved the world");
   });
+
+  it("rejects an out-of-range converted related passage", async () => {
+    const outOfRangePassage: RelatedPassage = {
+      ...relatedPassage,
+      normalized: "John 3:999",
+      verseStart: 999,
+      verseEnd: 999,
+    };
+    const reference = relatedPassageToReference(outOfRangePassage);
+
+    expect(reference.status).toBe("valid");
+    await expect(localWebProvider.getPassage("web", reference)).rejects.toThrow();
+  });
 });

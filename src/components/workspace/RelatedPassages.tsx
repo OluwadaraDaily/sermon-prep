@@ -6,6 +6,7 @@ import type { RelatedPassage } from "../../core/bible/types";
 import type { RelatedPassagePreview } from "../../features/workspace/useWorkspace";
 import { useHoverFocusDisclosure } from "../../features/workspace/useHoverFocusDisclosure";
 import { relatedPassageKey } from "../../features/workspace/workspaceUtils";
+import { PassagePreview } from "./PassagePreview";
 
 interface RelatedPassagesProps {
   onPassageHover: (passage: RelatedPassage) => void;
@@ -101,23 +102,18 @@ function RelatedPassageItem({
       {...disclosureHandlers}
     >
       <strong>{passage.normalized}</strong>
-      {preview?.status === "loading" || !preview ? (
+      {!preview || preview.status === "loading" ? (
         <p>Loading passage…</p>
       ) : preview.status === "error" ? (
         <p>Could not load this passage.</p>
-      ) : (
-        <blockquote>
-          {preview.passage?.verses.map((verse) => (
-            <p key={`${verse.chapter}-${verse.verse}`}>
-              <sup>
-                {verse.chapter}:{verse.verse}
-              </sup>{" "}
-              {verse.text}
-            </p>
-          ))}
-        </blockquote>
-      )}
-      <small>{preview?.passage?.versionName ?? "World English Bible"}</small>
+      ) : preview.status === "loaded" ? (
+        <PassagePreview passage={preview.passage} />
+      ) : null}
+      <small>
+        {preview?.status === "loaded"
+          ? preview.passage.versionName
+          : "World English Bible"}
+      </small>
     </div>
   ) : null;
 
@@ -126,11 +122,11 @@ function RelatedPassageItem({
       <li className="related-passage-item" {...disclosureHandlers}>
         <button
           ref={triggerRef}
-          aria-controls={tooltipId}
-          aria-expanded={isOpen}
+          aria-describedby={isOpen ? tooltipId : undefined}
           aria-label={`Preview ${passage.normalized}`}
           className="related-passage-trigger"
           data-preview-state={preview?.status ?? "idle"}
+          data-preview-open={isOpen}
           type="button"
           onFocus={handleActivate}
           onMouseEnter={handleActivate}

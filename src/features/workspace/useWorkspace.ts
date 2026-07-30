@@ -23,10 +23,9 @@ import {
 
 const initialStatusMessage = "Paste notes to find Bible references.";
 
-export type RelatedPassagePreview = {
-  passage?: Passage;
-  status: "error" | "idle" | "loading" | "loaded";
-};
+export type RelatedPassagePreview =
+  | { status: "error" | "idle" | "loading" }
+  | { passage: Passage; status: "loaded" };
 
 export function useWorkspace() {
   const [notes, setNotes] = useState("");
