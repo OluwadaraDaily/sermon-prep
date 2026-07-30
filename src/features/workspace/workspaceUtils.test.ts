@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { RelatedPassage } from "../../core/bible/types";
+import { localWebProvider } from "../../core/provider/localWebProvider";
 import { relatedPassageKey, relatedPassageToReference } from "./workspaceUtils";
 
 const relatedPassage: RelatedPassage = {
-  bookId: "John",
+  bookId: "john",
   chapterStart: 3,
   verseStart: 16,
   chapterEnd: 3,
@@ -15,19 +16,32 @@ const relatedPassage: RelatedPassage = {
 
 describe("related passage workspace utilities", () => {
   it("creates a stable key from a related passage range", () => {
-    expect(relatedPassageKey(relatedPassage)).toBe("John|3|16|3|17");
+    expect(relatedPassageKey(relatedPassage)).toBe("john|3|16|3|17");
   });
 
   it("converts a related passage into a valid local-provider reference", () => {
-    expect(relatedPassageToReference(relatedPassage)).toMatchObject({
-      id: "related-John|3|16|3|17",
+    const reference = relatedPassageToReference(relatedPassage);
+
+    expect(reference).toMatchObject({
+      id: "related-john|3|16|3|17",
       normalized: "John 3:16-17",
-      bookId: "John",
+      bookId: "john",
       chapterStart: 3,
       verseStart: 16,
       chapterEnd: 3,
       verseEnd: 17,
       status: "valid",
     });
+  });
+
+  it("loads the converted related range from the bundled WEB data", async () => {
+    const passage = await localWebProvider.getPassage(
+      "web",
+      relatedPassageToReference(relatedPassage),
+    );
+
+    expect(passage.normalized).toBe("John 3:16-17");
+    expect(passage.verses.map((verse) => verse.verse)).toEqual([16, 17]);
+    expect(passage.verses[0]?.text).toContain("For God so loved the world");
   });
 });
