@@ -6,6 +6,7 @@ import type {
 } from "../../core/bible/types";
 import type { PdfExportMode } from "../../core/export/pdf";
 import { referenceKey } from "../../features/workspace/workspaceUtils";
+import type { RelatedPassagePreview } from "../../features/workspace/useWorkspace";
 import { ExportControls } from "./ExportControls";
 import { ReferenceRow } from "./ReferenceRow";
 
@@ -23,8 +24,10 @@ interface ReviewPaneProps {
   onReferenceStatusChange: (index: number, status: ReferenceStatus) => void;
   onReferenceTextBlur: (index: number) => void;
   onReferenceTextChange: (index: number, value: string) => void;
+  onRelatedPassageHover: (passage: RelatedPassage) => void;
   passages: Record<string, Passage>;
   relatedPassages: Record<string, RelatedPassage[]>;
+  relatedPassagePreviews: Record<string, RelatedPassagePreview>;
   references: BibleReference[];
 }
 
@@ -42,8 +45,10 @@ export function ReviewPane({
   onReferenceStatusChange,
   onReferenceTextBlur,
   onReferenceTextChange,
+  onRelatedPassageHover,
   passages,
   relatedPassages,
+  relatedPassagePreviews,
   references,
 }: ReviewPaneProps) {
   return (
@@ -83,8 +88,10 @@ export function ReviewPane({
               onStatusChange={onReferenceStatusChange}
               onTextBlur={onReferenceTextBlur}
               onTextChange={onReferenceTextChange}
+              onRelatedPassageHover={onRelatedPassageHover}
               passage={passages[referenceKey(reference)]}
               relatedPassages={relatedPassages[referenceKey(reference)] ?? []}
+              relatedPassagePreviews={relatedPassagePreviews}
               reference={reference}
             />
           ))

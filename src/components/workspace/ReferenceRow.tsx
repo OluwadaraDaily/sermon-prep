@@ -4,6 +4,9 @@ import type {
   ReferenceStatus,
   RelatedPassage,
 } from "../../core/bible/types";
+import type { RelatedPassagePreview } from "../../features/workspace/useWorkspace";
+import { PassagePreview } from "./PassagePreview";
+import { RelatedPassages } from "./RelatedPassages";
 
 interface ReferenceRowProps {
   activeReferenceId: string | null;
@@ -14,29 +17,11 @@ interface ReferenceRowProps {
   onStatusChange: (index: number, status: ReferenceStatus) => void;
   onTextBlur: (index: number) => void;
   onTextChange: (index: number, value: string) => void;
+  onRelatedPassageHover: (passage: RelatedPassage) => void;
   passage?: Passage;
+  relatedPassagePreviews: Record<string, RelatedPassagePreview>;
   relatedPassages: RelatedPassage[];
   reference: BibleReference;
-}
-
-function RelatedPassages({
-  passages,
-  referenceId,
-}: {
-  passages: RelatedPassage[];
-  referenceId: string;
-}) {
-  return (
-    <section className="related-passages" aria-labelledby={`related-${referenceId}`}>
-      <h3 id={`related-${referenceId}`}>Related passages</h3>
-      <ul>
-        {passages.map((passage) => (
-          <li key={passage.normalized}>{passage.normalized}</li>
-        ))}
-      </ul>
-      <p>Ranked from the local OpenBible cross-reference data.</p>
-    </section>
-  );
 }
 
 export function ReferenceRow({
@@ -48,8 +33,10 @@ export function ReferenceRow({
   onStatusChange,
   onTextBlur,
   onTextChange,
+  onRelatedPassageHover,
   passage,
   relatedPassages,
+  relatedPassagePreviews,
   reference,
 }: ReferenceRowProps) {
   const isActive = activeReferenceId === reference.id;
@@ -109,28 +96,13 @@ export function ReferenceRow({
       ) : null}
       {passage ? <PassagePreview passage={passage} /> : null}
       {relatedPassages.length > 0 ? (
-        <RelatedPassages passages={relatedPassages} referenceId={reference.id} />
+        <RelatedPassages
+          onPassageHover={onRelatedPassageHover}
+          passages={relatedPassages}
+          previews={relatedPassagePreviews}
+          referenceId={reference.id}
+        />
       ) : null}
     </article>
-  );
-}
-
-function PassagePreview({ passage }: { passage: Passage }) {
-  return (
-    <blockquote>
-      {passage.verses.slice(0, 4).map((verse) => (
-        <p key={`${verse.chapter}-${verse.verse}`}>
-          <sup>
-            {verse.chapter}:{verse.verse}
-          </sup>{" "}
-          {verse.text}
-        </p>
-      ))}
-      {passage.verses.length > 4 ? (
-        <p className="more-line">
-          {passage.verses.length - 4} more verses included in export.
-        </p>
-      ) : null}
-    </blockquote>
   );
 }
