@@ -1,3 +1,4 @@
+import crossReferenceJson from "../../../data/cross-references/openbible.json";
 import { normalizeBibleReference } from "./catalog";
 import type { Passage, RelatedPassage } from "./types";
 type CrossReferenceEntry = {
@@ -7,17 +8,15 @@ type CrossReferenceEntry = {
 type CrossReferenceDataset = {
   references: Record<string, CrossReferenceEntry[]>;
 };
-const datasetPromise = import("../../../data/cross-references/openbible.json").then(
-  ({ default: dataset }) => dataset as CrossReferenceDataset,
-);
+const dataset = crossReferenceJson as CrossReferenceDataset;
 export const localCrossReferenceProvider = {
   async getRelatedPassages(passage: Passage, limit = 5): Promise<RelatedPassage[]> {
-    const dataset = await datasetPromise;
     const relatedByKey = new Map<string, RelatedPassage>();
     for (const verse of passage.verses) {
       const sourceKey = `${verse.bookId}.${verse.chapter}.${verse.verse}`;
       const entries = dataset.references[sourceKey] ?? [];
       for (const entry of entries) {
+        if (entry.score <= 0) continue;
         const related = parseRelatedPassage(entry.target, entry.score);
         if (!related) continue;
         const key = `${related.bookId}.${related.chapterStart}.${related.verseStart}-${related.chapterEnd}.${related.verseEnd}`;

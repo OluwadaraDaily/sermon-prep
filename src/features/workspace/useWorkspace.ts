@@ -44,41 +44,40 @@ export function useWorkspace() {
     const requestGeneration = refreshGeneration.current + 1;
     refreshGeneration.current = requestGeneration;
     const nextPassages: Record<string, Passage> = {};
-    const nextRelatedPassages: Record<string, RelatedPassage[]> = {};
-
-    const results = await Promise.allSettled(
-      nextReferences
-        .filter((reference) => reference.status === "valid")
-        .map(async (reference) => {
-          const passage = await localWebProvider.getPassage("web", reference);
-          let relatedPassages: RelatedPassage[] = [];
-          try {
-            relatedPassages =
-              await localCrossReferenceProvider.getRelatedPassages(passage);
-          } catch {
-            // Related passages are supplemental; a failed local data chunk must not hide the Bible text.
-          }
-          return {
-            key: referenceKey(reference),
-            passage,
-            relatedPassages,
-          };
-        }),
+    const validReferences = nextReferences.filter(
+      (reference) => reference.status === "valid",
     );
 
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        nextPassages[result.value.key] = result.value.passage;
-        nextRelatedPassages[result.value.key] = result.value.relatedPassages;
-      }
+    if (requestGeneration === refreshGeneration.current) {
+      setPassages({});
+      setRelatedPassages({});
     }
+
+    const results = await Promise.allSettled(
+      validReferences.map(async (reference) => {
+        const passage = await localWebProvider.getPassage("web", reference);
+        const key = referenceKey(reference);
+        nextPassages[key] = passage;
+
+        if (requestGeneration === refreshGeneration.current) {
+          setPassages((currentPassages) => ({
+            ...currentPassages,
+            [key]: passage,
+          }));
+          void refreshRelatedPassages(key, passage, requestGeneration);
+        }
+
+        return {
+          key,
+          passage,
+        };
+      }),
+    );
 
     const failedCount = results.filter((result) => result.status === "rejected").length;
     const isCurrent = requestGeneration === refreshGeneration.current;
 
     if (isCurrent) {
-      setPassages(nextPassages);
-      setRelatedPassages(nextRelatedPassages);
       if (failedCount > 0) {
         setStatusMessage(
           failedCount === 1
@@ -92,8 +91,27 @@ export function useWorkspace() {
       failedCount,
       isCurrent,
       passages: nextPassages,
-      relatedPassages: nextRelatedPassages,
+      relatedPassages: {},
     };
+  }
+
+  function refreshRelatedPassages(
+    key: string,
+    passage: Passage,
+    requestGeneration: number,
+  ) {
+    void localCrossReferenceProvider
+      .getRelatedPassages(passage)
+      .then((relatedPassages) => {
+        if (requestGeneration !== refreshGeneration.current) return;
+        setRelatedPassages((currentRelatedPassages) => ({
+          ...currentRelatedPassages,
+          [key]: relatedPassages,
+        }));
+      })
+      .catch(() => {
+        // Related passages are supplemental; a failed local data chunk must not hide the Bible text.
+      });
   }
 
   async function findPassages() {

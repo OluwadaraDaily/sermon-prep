@@ -165,7 +165,7 @@ em { color: var(--rose); font-style: italic; font-weight: 450; }
 .related-passages h3 { margin: 0 0 7px; color: var(--sage); font-size: .59rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .related-passages ul { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; padding: 0; list-style: none; }
 .related-passages li { padding: 5px 7px; border: 1px solid #d8dfd2; border-radius: 999px; color: #53634c; background: #f0f4ed; font-size: .61rem; }
-.related-passages p { margin: 7px 0 0; color: #a0978c; font-size: .56rem; }
+.related-passages p { margin: 7px 0 0; color: #70675d; font-size: .56rem; }
 
 @media (max-width: 760px) {
   .notes-editor { min-height: 370px; }

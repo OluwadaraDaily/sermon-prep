@@ -193,7 +193,7 @@ function classifyError(error) {
   return "other";
 }
 
-function buildReport(sourcePath, sourceText, records, errors) {
+function buildReport(sourcePath, sourceText, records, errors, structuralErrors) {
   const sourceBooks = new Set(records.map((record) => record.source.bookId));
   const targetBooks = new Set(records.map((record) => record.target.bookId));
   const targetRanges = records.filter(
@@ -235,6 +235,7 @@ function buildReport(sourcePath, sourceText, records, errors) {
         ? "zip containing cross_references.txt"
         : "tab-separated text",
       header: sourceText.split(/\r?\n/, 1)[0],
+      structuralErrors,
     },
     catalog: {
       bookCount: books.length,
@@ -355,6 +356,11 @@ ${JSON.stringify(report.sampleRecord, null, 2)}
 
 ## Catalog coverage
 
+## Structural errors
+
+${report.source.structuralErrors.length === 0 ? "No structural errors found." : report.source.structuralErrors.map((error) => `- line ${error.lineNumber}: ${error.error}`).join("\n")}
+
+
 - Existing WEB catalog books: ${report.catalog.bookCount}
 - Books used as sources: ${report.catalog.sourceBookCount}
 - Books used as targets: ${report.catalog.targetBookCount}
@@ -379,10 +385,14 @@ const sourceText = readArchiveText(archivePath);
 const lines = sourceText.split(/\r?\n/).filter(Boolean);
 const header = lines.shift();
 const errors = [];
+const structuralErrors = [];
 const records = [];
 
 if (!header?.startsWith("From Verse\tTo Verse\tVotes\t#www.openbible.info CC-BY ")) {
-  errors.push({ lineNumber: 1, error: `Unexpected header: ${header ?? "missing"}.` });
+  structuralErrors.push({
+    lineNumber: 1,
+    error: `Unexpected header: ${header ?? "missing"}.`,
+  });
 }
 
 for (const [index, line] of lines.entries()) {
@@ -394,7 +404,7 @@ for (const [index, line] of lines.entries()) {
   }
 }
 
-const report = buildReport(archivePath, sourceText, records, errors);
+const report = buildReport(archivePath, sourceText, records, errors, structuralErrors);
 if (outputPath) {
   const dataset = buildNormalizedDataset(
     archivePath,

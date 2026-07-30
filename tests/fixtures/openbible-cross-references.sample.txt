@@ -6,3 +6,6 @@ Gen.1.1	Col.1.16-Col.1.17	167
 Gen.1.1	Ps.33.6	-2
 Rom.16.25	Gen.1.1	4
 Gen.1.1	Lev.27.34-Num.1.1	5
+Unknown.1.1	Gen.1.1	5
+Gen.1.1	Gen.1.1	not-a-number
+not-a-reference	Gen.1.1	5

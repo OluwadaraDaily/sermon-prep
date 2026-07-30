@@ -6,6 +6,9 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 type ValidationReport = {
+  source: {
+    structuralErrors: Array<{ error: string; lineNumber: number }>;
+  };
   catalog: {
     sourceBookCount: number;
     targetBookCount: number;
@@ -38,15 +41,14 @@ type NormalizedDataset = {
   schemaVersion: number;
 };
 
-function runValidator(): ValidationReport {
+function runValidator(
+  fixtureName = "openbible-cross-references.sample.txt",
+): ValidationReport {
   const scriptPath = resolve(
     process.cwd(),
     "scripts/validate-openbible-cross-references.mjs",
   );
-  const fixturePath = resolve(
-    process.cwd(),
-    "tests/fixtures/openbible-cross-references.sample.txt",
-  );
+  const fixturePath = resolve(process.cwd(), "tests/fixtures", fixtureName);
   const output = execFileSync(process.execPath, [scriptPath, fixturePath, "--json"], {
     encoding: "utf8",
   });
@@ -58,10 +60,10 @@ describe("OpenBible cross-reference validation prototype", () => {
   it("normalizes known links, ranges, and signed vote scores", () => {
     const report = runValidator();
 
-    expect(report.records.inputLineCount).toBe(8);
+    expect(report.records.inputLineCount).toBe(11);
     expect(report.records.normalizedRecordCount).toBe(5);
     expect(report.records.distinctRecordCount).toBe(5);
-    expect(report.records.invalidRecordCount).toBe(2);
+    expect(report.records.invalidRecordCount).toBe(5);
     expect(report.records.targetRangeCount).toBe(1);
     expect(report.records.minimumScore).toBe(-2);
     expect(report.records.maximumScore).toBe(389);
@@ -88,6 +90,27 @@ describe("OpenBible cross-reference validation prototype", () => {
     ]);
   });
 
+  it("classifies malformed source rows separately from structural errors", () => {
+    const report = runValidator();
+
+    expect(report.records.invalidReasonCounts["unknown-book-token"]).toBe(1);
+    expect(report.records.invalidReasonCounts["invalid-vote-format"]).toBe(1);
+    expect(report.records.invalidReasonCounts["invalid-verse-format"]).toBe(1);
+    expect(report.source.structuralErrors).toEqual([]);
+  });
+
+  it("reports an unexpected header without counting it as an invalid record", () => {
+    const report = runValidator("openbible-cross-references.bad-header.txt");
+
+    expect(report.source.structuralErrors).toEqual([
+      {
+        lineNumber: 1,
+        error: "Unexpected header: Not the OpenBible header.",
+      },
+    ]);
+    expect(report.records.invalidRecordCount).toBe(0);
+  });
+
   it("writes a source-indexed dataset with attribution metadata", () => {
     const outputDirectory = mkdtempSync(join(tmpdir(), "sermon-prep-openbible-import-"));
     const outputPath = join(outputDirectory, "openbible.json");
@@ -107,7 +130,7 @@ describe("OpenBible cross-reference validation prototype", () => {
       expect(dataset.schemaVersion).toBe(1);
       expect(dataset.metadata).toMatchObject({
         archiveDate: "2026-07-27",
-        excludedRecordCount: 2,
+        excludedRecordCount: 5,
         includedRecordCount: 5,
         license: "CC BY",
         relationship: "related",
