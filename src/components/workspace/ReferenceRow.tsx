@@ -91,7 +91,7 @@ function RelatedPassageItem({
           {preview?.status === "loading" || !preview ? (
             <p>Loading passage…</p>
           ) : preview.status === "error" ? (
-            <p>Could not load this local passage.</p>
+            <p>Could not load this passage.</p>
           ) : (
             <blockquote>
               {preview.passage?.verses.map((verse) => (
